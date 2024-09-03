@@ -317,7 +317,7 @@ def display_selected_row(selected_rows,pressure,volume):
         ]
         model_name = selected_row["Model Name "].values[0]
         filename = f"{model_name}.txt"
-        location = "graphs"
+        location = "GRAPH_DATA"
         print(os.listdir(),filename)
         if filename in os.listdir(location):
             pressures,speeds = extract(filename,location,pressure)
