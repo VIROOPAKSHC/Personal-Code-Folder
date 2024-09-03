@@ -200,7 +200,7 @@ def calculate_downtimes(n_clicks, input1, input2, input3, pump_speed, table_data
         
         if flow_rate:
             Q = []
-            steady_state_df = filtered_df[filtered_df["Ult pressure(mTorr)"] <= pressure]
+            steady_state_df = filtered_df[filtered_df["Ult pressure(mTorr) "] <= pressure]
             for So in steady_state_df[cols[2]].unique():
                 So = float(So)
                 S_eff = (So*C)/(So+C)
@@ -315,7 +315,7 @@ def display_selected_row(selected_rows,pressure,volume):
                 ),
         html.Br(),
         ]
-        model_name = selected_row["Model Name"].values[0]
+        model_name = selected_row["Model Name "].values[0]
         filename = f"{model_name}.txt"
         location = "graphs"
         print(os.listdir(),filename)
@@ -395,7 +395,7 @@ def display_selected_row(selected_rows,pressure,volume):
             
         outputs.extend([html.B("Select model(s) for the Pressure vs Time graph"),
         html.Br(),
-        dcc.Dropdown(id="graph-dropdown",options=selected_row["Model Name"].to_list(),multi=True,value=[],clearable=True),
+        dcc.Dropdown(id="graph-dropdown",options=selected_row["Model Name "].to_list(),multi=True,value=[],clearable=True),
         html.Div(id="graph-output"),
         html.Br(),
         html.Br()])
@@ -440,7 +440,7 @@ def display_selected_row_2(selected_rows,pressure):
         html.Br(),
         html.B("Select model(s) for the Pressure vs Time graph (Not Configured yet)"),
         html.Br(),
-        dcc.Dropdown(id="graph-dropdown-2",options=selected_row["Model Name"].to_list(),multi=True,value=[],clearable=True),
+        dcc.Dropdown(id="graph-dropdown-2",options=selected_row["Model Name "].to_list(),multi=True,value=[],clearable=True),
         html.Div(id="flow-rate-graph-output"),
         html.Br(),
         html.Br()
