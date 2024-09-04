@@ -226,13 +226,14 @@ def calculate_downtimes(n_clicks, input1, input2, input3, pump_speed, table_data
             
             outputs.append(html.Div(id='Flow-Rate-Output'))
         
-        filtered_df = filtered_df[filtered_df["Ult pressure(mTorr)"] <= pressure]
+        filtered_df = filtered_df[filtered_df["Ult pressure(mTorr) "] <= pressure]
         filtered_df["Effective Pumping Speed"] = 0.0
-        for So in filtered_df[cols[2]].unique():
-            So = float(So)
+        for So in filtered_df["Pumping speed m3/hr "].unique():
+            So_org = So
+            So = float(So)*0.277778
             S_eff = (So*C)/(So+C)
             S_eff = round(S_eff,4)
-            filtered_df.loc[filtered_df["Pumping speed m3/hr "] == So,"Effective Pumping Speed"] = S_eff
+            filtered_df.loc[filtered_df["Pumping speed m3/hr "] == So_org,"Effective Pumping Speed"] = S_eff
         
         outputs.append(html.Br())
         outputs.append(html.B(f"Effective Speeds Table :"))
@@ -317,8 +318,7 @@ def display_selected_row(selected_rows,pressure,volume):
         ]
         model_name = selected_row["Model Name "].values[0]
         filename = f"{model_name}.txt"
-        location = "graphs"
-        print(os.listdir(),filename)
+        location = "GRAPH_DATA"
         if filename in os.listdir(location):
             pressures,speeds = extract(filename,location,pressure)
             pressures = [760] + list(pressures) + [pressure]
@@ -331,16 +331,12 @@ def display_selected_row(selected_rows,pressure,volume):
             effective_speeds = []
             pump_down_times = []
             Q = []
-            for i in range(len(pressures)):
-                if i==0:
-                    conductances.append(-1)
-                    effective_speeds.append(-1)
-                    pump_down_times.append(-1)
-                    pfs.append(-1)
-                    Q.append(-1)
-                else:
-                    So = speeds[i]
-                    p_ = (pressures[i] + pressures[i-1])/2
+            n = len(pressures)
+            for i in range(n):
+                pressure = pressures[i]
+                So = speeds[i]
+                if i!=n-1:
+                    p_ = (pressures[i] + pressures[i+1])/2
                     C = 0
                     for l,d in table_values:
                         l,d = round(l,4),round(d,4)
@@ -365,7 +361,16 @@ def display_selected_row(selected_rows,pressure,volume):
                     pf = (S_eff/(C+S_eff))*760
                     pfs.append(pf)
                     Q.append(pressures[i]*S_eff)
-            another_table = pd.DataFrame({"Pressure (Torr)":pressures,"Pumping speed m3/hr ":speeds,"Conductance":conductances,"Effective Speed":effective_speeds,"Pump Down Time":pump_down_times})
+                else:
+                    conductances.append(-1)
+                    effective_speeds.append(-1)
+                    pump_down_times.append(round(((volume/S_eff)*math.log(760/pressures[-1])),4))
+                    pfs.append(-1)
+                    Q.append(-1)
+                    
+            
+            print(len(conductances),len(effective_speeds),len(pump_down_times),len(pfs),len(Q),len(speeds),len(pressures))
+            another_table = pd.DataFrame({"Pressure (Torr)":pressures,"Pumping speed L/s ":speeds,"Conductance":conductances,"Effective Speed":effective_speeds,"Pump Down Time":pump_down_times})
             columns = [{'headerName': i, 'field': i} for i in another_table.columns]
             data = another_table.to_dict('records')
             grid = dag.AgGrid(
@@ -379,7 +384,7 @@ def display_selected_row(selected_rows,pressure,volume):
                 className="ag-theme-alpine"
             )
             outputs.append(html.Div(id="individual-pressures-div", children=[grid],style={"padding":"10px"}))
-            another_table_2 = pd.DataFrame({"Ult Pressure (Torr)":pressures,"Pumping speed m3/hr ":speeds,"Conductance":conductances,"Effective Speed":effective_speeds,"Pf":pfs,"Flow Rate":Q})
+            another_table_2 = pd.DataFrame({"Pressure (Torr)":pressures,"Pumping speed L/s ":speeds,"Conductance":conductances,"Effective Speed":effective_speeds,"Pf":pfs,"Flow Rate":Q})
             columns = [{'headerName': i, 'field': i} for i in another_table_2.columns]
             data = another_table_2.to_dict('records')
             grid = dag.AgGrid(
@@ -414,7 +419,7 @@ def display_selected_row_2(selected_rows,pressure):
     if selected_rows:
 
         selected_row = df[df["Pumping speed m3/hr "] == selected_rows[0]["Pumping speed m3/hr "]].sort_values("Total Equivalent Energy")
-        selected_row = selected_row[selected_row["Ult pressure(mTorr)"] <= pressure]
+        selected_row = selected_row[selected_row["Ult pressure(mTorr) "] <= pressure]
         return html.Div([
                 dag.AgGrid(
                     rowData=selected_row.to_dict('records'),
