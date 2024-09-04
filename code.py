@@ -52,7 +52,7 @@ def update_output(btn1_clicks, btn2_clicks):
             html.Br(),
             dcc.Input(id='input-1', type='number', placeholder='Pump Down Time'),
             html.Br(),
-            html.B("Enter the target Pressure (in mTorr)"),
+            html.B("Enter the target Pressure (in Torr)"),
             html.Br(),
             dcc.Input(id='input-2', type='number', placeholder='Target Pressure'),
             html.Br(),
@@ -317,12 +317,13 @@ def display_selected_row(selected_rows,pressure,volume):
         ]
         model_name = selected_row["Model Name "].values[0]
         filename = f"{model_name}.txt"
-        location = "GRAPH_DATA"
+        location = "graphs"
         print(os.listdir(),filename)
         if filename in os.listdir(location):
             pressures,speeds = extract(filename,location,pressure)
             pressures = [760] + list(pressures) + [pressure]
             speeds = [-1] + list(speeds) + [selected_rows[0]["Pumping speed m3/hr "]]
+            speeds = [speed*0.277777778 for speed in speeds]
             pfs = []
             conductances = []
             mu = 0.0179
@@ -364,7 +365,7 @@ def display_selected_row(selected_rows,pressure,volume):
                     pf = (S_eff/(C+S_eff))*760
                     pfs.append(pf)
                     Q.append(pressures[i]*S_eff)
-            another_table = pd.DataFrame({"Ult Pressure (Torr)":pressures,"Pumping speed m3/hr ":speeds,"Conductance":conductances,"Effective Speed":effective_speeds,"Pump Down Time":pump_down_times})
+            another_table = pd.DataFrame({"Pressure (Torr)":pressures,"Pumping speed m3/hr ":speeds,"Conductance":conductances,"Effective Speed":effective_speeds,"Pump Down Time":pump_down_times})
             columns = [{'headerName': i, 'field': i} for i in another_table.columns]
             data = another_table.to_dict('records')
             grid = dag.AgGrid(
