@@ -288,7 +288,7 @@ def extract(filename,location,target_pressure):
     State('input-2','value'),
     State('input-3','value')
 )
-def display_selected_row(selected_rows,pressure,volume):
+def display_selected_row(selected_rows,target_pressure,volume):
     if selected_rows:
         selected_row = df[df["Pumping speed m3/hr "] == selected_rows[0]["Pumping speed m3/hr "]].sort_values("Total Equivalent Energy")
         outputs = [
@@ -320,8 +320,8 @@ def display_selected_row(selected_rows,pressure,volume):
         filename = f"{model_name}.txt"
         location = "GRAPH_DATA"
         if filename in os.listdir(location):
-            pressures,speeds = extract(filename,location,pressure)
-            pressures = [760] + list(pressures) + [pressure]
+            pressures,speeds = extract(filename,location,target_pressure)
+            pressures = [760] + list(pressures) + [target_pressure]
             speeds = [-1] + list(speeds) + [selected_rows[0]["Pumping speed m3/hr "]]
             speeds = [speed*0.277777778 for speed in speeds]
             pfs = []
@@ -356,7 +356,7 @@ def display_selected_row(selected_rows,pressure,volume):
                     conductances.append(C)
                     S_eff = (So*C)/(So+C)
                     effective_speeds.append(S_eff)
-                    time = round(((volume/S_eff)*math.log(760/pressure)),4)
+                    time = round(((volume/S_eff)*math.log(pressures[i]/pressures[i+1])),4)
                     pump_down_times.append(time)
                     pf = (S_eff/(C+S_eff))*760
                     pfs.append(pf)
