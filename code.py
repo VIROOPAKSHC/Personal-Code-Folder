@@ -48,15 +48,12 @@ app.layout = html.Div([
 def update_output(btn1_clicks, btn2_clicks):
     if btn1_clicks > 0:
         return html.Div([
-            html.B("Enter the Pump Down time (in seconds)"),
+            html.B("Enter the target Pressure"),
             html.Br(),
-            dcc.Input(id='input-1', type='number', placeholder='Pump Down Time'),
+            dcc.Input(id='input-2', type='number', placeholder='Target Pressure',style={"width":"200px"}),
+            dcc.Dropdown(id='Pressure-Units',placeholder="Units",options=["Torr","mTorr","Bar","mBar"],style={"width":"200px"}),
             html.Br(),
-            html.B("Enter the target Pressure (in Torr)"),
-            html.Br(),
-            dcc.Input(id='input-2', type='number', placeholder='Target Pressure'),
-            html.Br(),
-            html.B("Enter the Volume of the Chamber (in L)"),
+            html.B("Enter the Volume of the LoadLock (in L)"),
             html.Br(),
             dcc.Input(id='input-3', type='number', placeholder='Chamber Volume'),
             html.Br(),
@@ -92,6 +89,7 @@ def update_output(btn1_clicks, btn2_clicks):
             html.Br(),
             html.Button('Add Row', id='add-row-button-2', n_clicks=0),
             html.Br(),
+            html.Br(),
             html.B("Enter or Select Pumping Speed"),
             html.Br(),
             html.Div([dcc.Dropdown(id='pumping-speed-1',options=df['Pumping speed m3/hr '].unique(),placeholder='Select Speed',style={"width":"250px"}),html.Br(),
@@ -101,8 +99,14 @@ def update_output(btn1_clicks, btn2_clicks):
             html.Br(),
             dcc.Input(id="flow-rate",type="number",placeholder="Flow Rate"),
             html.Br(),
+            html.B("Enter the Pump Down time in secs"),
+            html.Br(),
+            dcc.Input(id='input-1', type='number', placeholder='Pump Down Time'),
+            html.Br(),
+            html.Br(),
             html.Button("Submit",id='submit-button',n_clicks=0),
-            html.Br()
+            
+            
         ])
     elif btn2_clicks > 0:
         return html.Div([
@@ -149,12 +153,19 @@ def set_value(pump):
     State('input-table', 'data'),
     State('input-table-2','data'),
     State('flow-rate','value'),
+    State("Pressure-Units","value"),
     prevent_initial_call=True
 )
-def calculate_downtimes(n_clicks, input1, input2, input3, pump_speed, table_data,table_data_2,flow_rate):
+def calculate_downtimes(n_clicks, input1, input2, input3, pump_speed, table_data,table_data_2,flow_rate,pressure_units):
     if n_clicks > 0:
         tp = input1
         pressure = input2
+        if pressure_units == "mTorr":
+            pressure = pressure*0.001
+        elif pressure_units == 'Bar':
+            pressure = pressure*760
+        elif pressure_units == "mBar":
+            pressure = pressure*0.76
         volume = input3
         C = 0
         mu = 0.0179
@@ -188,7 +199,7 @@ def calculate_downtimes(n_clicks, input1, input2, input3, pump_speed, table_data
             C += 1/(c)
 
         C = 2/C
-        outputs.append(html.B(f"Conductance Calculated : {C}"))
+        outputs.append(html.B(f"Conductance Calculated C = {C} L/s"))
         C = round(C,4)
         filtered_df  = df
         try:
@@ -227,20 +238,21 @@ def calculate_downtimes(n_clicks, input1, input2, input3, pump_speed, table_data
             outputs.append(html.Div(id='Flow-Rate-Output'))
         
         filtered_df = filtered_df[filtered_df["Ult pressure(mTorr) "] <= pressure]
-        filtered_df["Effective Pumping Speed"] = 0.0
+        filtered_df["Effective Pumping Speed (L/s)"] = 0.0
         for So in filtered_df["Pumping speed m3/hr "].unique():
             So_org = So
             So = float(So)*0.277778
             S_eff = (So*C)/(So+C)
             S_eff = round(S_eff,4)
-            filtered_df.loc[filtered_df["Pumping speed m3/hr "] == So_org,"Effective Pumping Speed"] = S_eff
-        
+            filtered_df.loc[filtered_df["Pumping speed m3/hr "] == So_org,"Effective Pumping Speed (L/s)"] = S_eff
+        outputs.append(html.Br())
+        outputs.append(html.B(f"Effective Speed S_eff = {target_S_eff} L/S"))
         outputs.append(html.Br())
         outputs.append(html.B(f"Effective Speeds Table :"))
         outputs.append(html.Br())
-        filtered_df = filtered_df[(filtered_df["Effective Pumping Speed"] >= 0.5*target_S_eff) & (filtered_df["Effective Pumping Speed"] <= 1.5*target_S_eff)]
+        filtered_df = filtered_df[(filtered_df["Effective Pumping Speed (L/s)"] >= 0.5*target_S_eff) & (filtered_df["Effective Pumping Speed (L/s)"] <= 1.5*target_S_eff)]
         filtered_df = filtered_df.sort_values("Total Equivalent Energy")
-        cols = filtered_df.columns[0:2].to_list() + ["Effective Pumping Speed"] + filtered_df.columns[2:-1].to_list()
+        cols = filtered_df.columns[0:2].to_list() + ["Effective Pumping Speed (L/s)"] + filtered_df.columns[2:-1].to_list()
         columns = [{"field":col} for col in cols]
         filtered_df = filtered_df[cols]
         data = filtered_df.to_dict('records')
@@ -291,31 +303,7 @@ def extract(filename,location,target_pressure):
 def display_selected_row(selected_rows,target_pressure,volume):
     if selected_rows:
         selected_row = df[df["Pumping speed m3/hr "] == selected_rows[0]["Pumping speed m3/hr "]].sort_values("Total Equivalent Energy")
-        outputs = [
-                dag.AgGrid(
-                    rowData=selected_row.to_dict('records'),
-                    columnDefs=[{'headerName': i, 'field': i} for i in selected_row.columns],
-                    columnSize="sizeToFit",
-                    defaultColDef={"resizable": True, "sortable": True, "filter": True, "minWidth": 100},
-                    dashGridOptions={
-                        "pagination": True,
-                        "paginationPageSize": 8,
-                        "domLayout": "autoHeight",
-                        'rowSelection': "single",
-                        'getRowStyle': {
-                                    'styleConditions': [
-                                        {'condition': "params.rowIndex === 0",
-                                                                'style': {
-                                                                    'backgroundColor': 'green',
-                                                                    'color': 'white'
-                                                                }}
-                       ]}
-                    },
-                    style={"height": 500, "width": "100%"},
-                    className="ag-theme-alpine"
-                ),
-        html.Br(),
-        ]
+        outputs = []
         model_name = selected_row["Model Name "].values[0]
         filename = f"{model_name}.txt"
         location = "GRAPH_DATA"
@@ -333,7 +321,6 @@ def display_selected_row(selected_rows,target_pressure,volume):
             Q = []
             n = len(pressures)
             for i in range(n):
-                pressure = pressures[i]
                 So = speeds[i]
                 if i!=n-1:
                     p_ = (pressures[i] + pressures[i+1])/2
@@ -370,7 +357,15 @@ def display_selected_row(selected_rows,target_pressure,volume):
                     
             
             print(len(conductances),len(effective_speeds),len(pump_down_times),len(pfs),len(Q),len(speeds),len(pressures))
-            another_table = pd.DataFrame({"Pressure (Torr)":pressures,"Pumping speed L/s ":speeds,"Conductance":conductances,"Effective Speed":effective_speeds,"Pump Down Time":pump_down_times})
+            conductances = list(map(lambda x:round(x,2), conductances))
+            effective_speeds = list(map(lambda x:round(x,2), effective_speeds))
+            pump_down_times = list(map(lambda x:round(x,2), pump_down_times))
+            speeds = list(map(lambda x:round(x,2), speeds))
+            pressures = list(map(lambda x:round(x,2), pressures))
+            Q = list(map(lambda x:round(x,2), Q))
+            pfs = list(map(lambda x:round(x,2), pfs))
+            
+            another_table = pd.DataFrame({"Pressure (Torr)":pressures,"Pumping speed L/s ":speeds,"Conductance L/s":conductances,"Effective Speed L/s":effective_speeds,"Pump Down Time (s)":pump_down_times})
             columns = [{'headerName': i, 'field': i} for i in another_table.columns]
             data = another_table.to_dict('records')
             grid = dag.AgGrid(
@@ -384,7 +379,7 @@ def display_selected_row(selected_rows,target_pressure,volume):
                 className="ag-theme-alpine"
             )
             outputs.append(html.Div(id="individual-pressures-div", children=[grid],style={"padding":"10px"}))
-            another_table_2 = pd.DataFrame({"Pressure (Torr)":pressures,"Pumping speed L/s ":speeds,"Conductance":conductances,"Effective Speed":effective_speeds,"Pf":pfs,"Flow Rate":Q})
+            another_table_2 = pd.DataFrame({"Pressure (Torr)":pressures,"Pumping speed L/s ":speeds,"Conductance L/s":conductances,"Effective Speed L/s":effective_speeds,"Pf":pfs,"Flow Rate":Q})
             columns = [{'headerName': i, 'field': i} for i in another_table_2.columns]
             data = another_table_2.to_dict('records')
             grid = dag.AgGrid(
