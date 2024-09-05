@@ -206,7 +206,7 @@ def calculate_downtimes(n_clicks, input1, input2, input3, pump_speed, table_data
             filtered_df = df[(df["Pumping speed m3/hr "] >= pump_speed*0.9) & (df["Pumping speed m3/hr "] <= (pump_speed*1.1))]
         except:
             pass
-
+        filtered_df.round(2)
         cols = df.columns
         
         if flow_rate:
@@ -244,7 +244,7 @@ def calculate_downtimes(n_clicks, input1, input2, input3, pump_speed, table_data
             So = float(So)*0.277778
             S_eff = (So*C)/(So+C)
             S_eff = round(S_eff,4)
-            filtered_df.loc[filtered_df["Pumping speed m3/hr "] == So_org,"Effective Pumping Speed (L/s)"] = S_eff
+            filtered_df.loc[filtered_df["Pumping speed m3/hr "] == So_org,"Effective Pumping Speed (L/s)"] = round(S_eff,2)
         outputs.append(html.Br())
         outputs.append(html.B(f"Effective Speed S_eff = {target_S_eff} L/S"))
         outputs.append(html.Br())
@@ -364,7 +364,6 @@ def display_selected_row(selected_rows,target_pressure,volume):
             pressures = list(map(lambda x:round(x,2), pressures))
             Q = list(map(lambda x:round(x,2), Q))
             pfs = list(map(lambda x:round(x,2), pfs))
-            
             another_table = pd.DataFrame({"Pressure (Torr)":pressures,"Pumping speed L/s ":speeds,"Conductance L/s":conductances,"Effective Speed L/s":effective_speeds,"Pump Down Time (s)":pump_down_times})
             columns = [{'headerName': i, 'field': i} for i in another_table.columns]
             data = another_table.to_dict('records')
@@ -379,6 +378,11 @@ def display_selected_row(selected_rows,target_pressure,volume):
                 className="ag-theme-alpine"
             )
             outputs.append(html.Div(id="individual-pressures-div", children=[grid],style={"padding":"10px"}))
+            
+            outputs.append(html.Br())
+            outputs.append(html.B(f"Total Pump Down Time t = {sum(pump_down_times)} s"))
+            outputs.append(html.Br())
+
             another_table_2 = pd.DataFrame({"Pressure (Torr)":pressures,"Pumping speed L/s ":speeds,"Conductance L/s":conductances,"Effective Speed L/s":effective_speeds,"Pf":pfs,"Flow Rate":Q})
             columns = [{'headerName': i, 'field': i} for i in another_table_2.columns]
             data = another_table_2.to_dict('records')
