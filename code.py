@@ -8,6 +8,9 @@ import numpy as np
 import plotly.graph_objects as go
 import dash_ag_grid as dag
 import os
+from plotly.subplots import make_subplots
+import io
+import base64
 
 app = dash.Dash(__name__,external_stylesheets=[dbc.themes.UNITED, dbc.icons.BOOTSTRAP],suppress_callback_exceptions=True)
 k_dict = {0:0.017,1:0.05,2:0.083,4:0.073,6:0.056,8:0.042,10:0.034,12:0.029,14:0.026}
@@ -31,10 +34,10 @@ def description_card():
 app.layout = html.Div([
     description_card(),
     html.B("Select - Type of your flow"),
-    html.Div([
-        html.Button('Viscous Flow', id='button-1', n_clicks=0),
-        html.Button('Molecular Flow', id='button-2', n_clicks=0, style={'margin-left': '25px'}),
-    ],style={"padding":"10px"}),
+    dcc.Tabs(id='output-tabs', value='tab-1', children=[
+        dcc.Tab(label='Viscous', value='tab-1',style={"fontWeight":"bold"},selected_style={"fontWeight":"bold"}),
+        dcc.Tab(label='Molecular', value='tab-2',style={"fontWeight":"bold"},selected_style={"fontWeight":"bold"}),
+    ]),
     html.Div(id='output-container',style={"padding":"10px"}),
     html.Div(id='output-container-2',style={"padding":"10px"})
 ],style={"padding":"10px"})
@@ -42,23 +45,21 @@ app.layout = html.Div([
 
 @app.callback(
     Output('output-container', 'children'),
-    Input('button-1', 'n_clicks'),
-    Input('button-2', 'n_clicks')
+    Input('output-tabs', 'value')
 )
-def update_output(btn1_clicks, btn2_clicks):
-    if btn1_clicks > 0:
-        return html.Div([
-            html.B("Enter the target Pressure"),
+def update_output(selected):
+    if selected == "tab-1":
+        return ([
+            html.Div([dcc.Markdown("** Enter the target Pressure **",style={"width":"200px"}),
+            dcc.Input(id='input-2', type='number', placeholder='Target Pressure',style={"margin-left":"50px","width":"200px"}),
+            dcc.Dropdown(id='Pressure-Units',placeholder="Units",options=["Torr","mTorr","Bar","mBar"],style={"width":"200px"}),],style={'display': 'flex'}),
+            
             html.Br(),
-            dcc.Input(id='input-2', type='number', placeholder='Target Pressure',style={"width":"200px"}),
-            dcc.Dropdown(id='Pressure-Units',placeholder="Units",options=["Torr","mTorr","Bar","mBar"],style={"width":"200px"}),
+            html.Div([dcc.Markdown("""** Enter the Volume of the LoadLock (in L) **""",style={"width":"200px"}),
+            dcc.Input(id='input-3', type='number', placeholder='Chamber Volume',style={"margin-left":"50px","width":"200px"}),],style={'display': 'flex'}),
             html.Br(),
-            html.B("Enter the Volume of the LoadLock (in L)"),
-            html.Br(),
-            dcc.Input(id='input-3', type='number', placeholder='Chamber Volume'),
-            html.Br(),
-            html.B("Enter the Pipe dimensions"),
-            html.Br(),
+
+            html.Div([dcc.Markdown("** Enter the Pipe dimensions **",style={"width":"200px"}),
             dash_table.DataTable(
                 id='input-table',
                 columns=[
@@ -68,55 +69,128 @@ def update_output(btn1_clicks, btn2_clicks):
                 data=[{'length': '', 'diameter': ''}],
                 editable=True,
                 row_deletable=True,
-                style_cell={'width': '70%', 'textAlign': 'center'}
-            ),
+                style_cell={'width': '200px', 'textAlign': 'center'}
+            ,style_table={"margin-left":"50px"})],style={"display":"flex"}),
             html.Br(),
-            html.Button('Add Row', id='add-row-button', n_clicks=0),
+            html.Button('Add Row', id='add-row-button', n_clicks=0,style={"margin-left":"250px","width":"120px","fontWeight":"bold","textAlign":"center"}),
             html.Br(),
-            html.B("Enter the Bend dimensions"),
             html.Br(),
+            html.Div([dcc.Markdown("** Enter the Bend dimensions **",style={"width":"200px"}),
             dash_table.DataTable(
                 id='input-table-2',
                 columns=[
-                    {'name': 'Radius (in cm)', 'id': 'radius', 'type': 'numeric'},
                     {'name': 'Diameter (in cm)', 'id': 'diameter', 'type': 'numeric'},
                 ],
-                data=[{'radius': '', 'diameter': ''}],
+                data=[{'diameter': ''}],
                 editable=True,
                 row_deletable=True,
-                style_cell={'width': '70%', 'textAlign': 'center'}
+                style_cell={'width': '200px', 'textAlign': 'center'}
+            ,style_table={"margin-left":"50px"})],style={"display":"flex"}),
+            html.Br(),
+            html.Button('Add Row', id='add-row-button-2', n_clicks=0,style={"margin-left":"250px","width":"120px","fontWeight":"bold","textAlign":"center"}),
+            html.Br(),
+            # html.Br(),
+            # html.B("Enter or Select Pumping Speed"),
+            # html.Br(),
+            # html.Div([dcc.Dropdown(id='pumping-speed-1',options=df['Pumping speed m3/hr '].unique(),placeholder='Select Speed',style={"width":"250px"}),html.Br(),
+            #           dcc.Input(id='pumping-speed-2',type='number',placeholder='Enter Pumping Speed',style={"width":"250px"})]),
+            # html.Br(),
+            # html.B("Enter the Flow Rate in Torr-L/s"),
+            # html.Br(),
+            # dcc.Input(id="flow-rate",type="number",placeholder="Flow Rate"),
+            html.Br(),
+            html.Div([dcc.Markdown("** Enter the Pump Down time in secs **",style={"width":"200px"}),
+            dcc.Input(id='input-1', type='number', placeholder='Pump Down Time',style={"margin-left":"50px","width":"200px"})],style={"display":"flex"}),
+            html.Br(),
+            html.Div([dcc.Markdown("** Select a percentage of Effective Pumping speed for Data Filtering **"),
+            
+            dcc.Slider(0, 100, 10,
+               value=30,
+               id='S_eff'
+            )]),
+            html.Br(),
+            html.Div([
+                dcc.Markdown("** Excel Template Download and Upload **",style={"width":"200px"}),
+            dbc.Button("Download Template", id="download-button", color="primary",style={"margin-left":"50px","width":"200px"}),
+            dcc.Download(id="download-template"),  ],style={"display":"flex"}
             ),
+
             html.Br(),
-            html.Button('Add Row', id='add-row-button-2', n_clicks=0),
-            html.Br(),
-            html.Br(),
-            html.B("Enter or Select Pumping Speed"),
-            html.Br(),
-            html.Div([dcc.Dropdown(id='pumping-speed-1',options=df['Pumping speed m3/hr '].unique(),placeholder='Select Speed',style={"width":"250px"}),html.Br(),
-                      dcc.Input(id='pumping-speed-2',type='number',placeholder='Enter Pumping Speed',style={"width":"250px"})]),
-            html.Br(),
-            html.B("Enter the Flow Rate in Torr-L/s"),
-            html.Br(),
-            dcc.Input(id="flow-rate",type="number",placeholder="Flow Rate"),
-            html.Br(),
-            html.B("Enter the Pump Down time in secs"),
-            html.Br(),
-            dcc.Input(id='input-1', type='number', placeholder='Pump Down Time'),
-            html.Br(),
+
+            dcc.Upload(
+                id='upload-data',
+                children=html.Div([
+                    'Drag and Drop or ',
+                    html.A('Select a File')
+                ]),
+                style={
+                    'width': '100%',
+                    'height': '60px',
+                    'lineHeight': '60px',
+                    'borderWidth': '1px',
+                    'borderStyle': 'dashed',
+                    'borderRadius': '5px',
+                    'textAlign': 'center',
+                    'margin': '10px'
+                },
+                multiple=False, 
+                accept=".xlsm"  
+            ),
+                
+            html.Div(id='output-data-upload'),
+            
             html.Br(),
             html.Button("Submit",id='submit-button',n_clicks=0),
-            
-            
-        ])
-    elif btn2_clicks > 0:
-        return html.Div([
-            html.Br(),
-            html.B('Button 2 was clicked!'),
-            html.Br()
         ])
     else:
-        return html.Div()
-    
+        return html.Div([
+            html.Br(),
+            html.B('Molecular Flow was clicked!'),
+            html.Br()
+        ])
+
+@app.callback(
+    Output("download-template", "data"),
+    [Input("download-button", "n_clicks")],
+    prevent_initial_call=True
+)
+def download_template(n_clicks):
+    if n_clicks:
+        return dcc.send_file("template.xlsm")
+
+@app.callback(
+    Output('output-data-upload', 'children'),
+    [Input('upload-data', 'contents')],
+    [State('upload-data', 'filename')]
+)
+def handle_uploaded_file(contents, filename):
+    if contents is not None:
+        content_type, content_string = contents.split(',')
+        decoded = base64.b64decode(content_string)
+
+        if filename.endswith('.xlsm'):
+            try:
+                df = pd.read_excel(io.BytesIO(decoded), engine='openpyxl')  # Pandas does not directly support xlsm read, so this is just for illustration
+
+                return html.Div([
+                    html.H5(f"Uploaded file: {filename}"),
+                    html.Hr(),
+                    html.H6("File content preview:"),
+                    # Display the content of the first few rows of the sheet (example)
+                    dcc.Markdown(df.head().to_markdown())
+                ])
+            except Exception as e:
+                return html.Div([
+                    'There was an error processing the file.',
+                    html.Br(),
+                    f'Error: {e}'
+                ])
+        else:
+            return html.Div([
+                'Please upload a valid .xlsm file.'
+            ])
+
+
 @app.callback(
     Output('input-table', 'data'),
     Input('add-row-button', 'n_clicks'),
@@ -139,9 +213,9 @@ def add_row_2(n_clicks, rows, columns):
         rows.append({c['id']: '' for c in columns})
     return rows
 
-@app.callback(Output('pumping-speed-2','value'),Input('pumping-speed-1','value'))
-def set_value(pump):
-    return pump
+# @app.callback(Output('pumping-speed-2','value'),Input('pumping-speed-1','value'))
+# def set_value(pump):
+#     return pump
 
 @app.callback(
     Output('output-container-2', 'children', allow_duplicate=True),
@@ -149,14 +223,15 @@ def set_value(pump):
     Input('input-1', 'value'),
     Input('input-2', 'value'),
     Input('input-3', 'value'),
-    State('pumping-speed-2','value'),
+    # State('pumping-speed-2','value'),
     State('input-table', 'data'),
     State('input-table-2','data'),
-    State('flow-rate','value'),
+    # State('flow-rate','value'),
     State("Pressure-Units","value"),
+    State("S_eff",'value'),
     prevent_initial_call=True
 )
-def calculate_downtimes(n_clicks, input1, input2, input3, pump_speed, table_data,table_data_2,flow_rate,pressure_units):
+def calculate_downtimes(n_clicks, input1, input2, input3, table_data,table_data_2,pressure_units,slider):
     if n_clicks > 0:
         tp = input1
         pressure = input2
@@ -181,7 +256,7 @@ def calculate_downtimes(n_clicks, input1, input2, input3, pump_speed, table_data
             table_values.append([row['length'],row['diameter']])
         
         for row in table_data_2:
-            table_values_2.append([row['radius'],row['diameter']])
+            table_values_2.append(row['diameter'])
 
         outputs=[]
         for l,d in table_values:
@@ -191,9 +266,9 @@ def calculate_downtimes(n_clicks, input1, input2, input3, pump_speed, table_data
             C += 1/(c)
         
         constant_factor = (PI*1000*p_) / (128*mu*0.1)
-        for r,d in table_values_2:
-            K = k_dict[int(r/d)]
-            r,d = round(r,4),round(d,4)
+        for d in table_values_2:
+            K = k_dict[1] # r==d
+            d = round(d,4)
             c = constant_factor*K*((d*0.01)**3)
             c = round(c,4)
             C += 1/(c)
@@ -202,40 +277,40 @@ def calculate_downtimes(n_clicks, input1, input2, input3, pump_speed, table_data
         outputs.append(html.B(f"Conductance Calculated C = {C} L/s"))
         C = round(C,4)
         filtered_df  = df
-        try:
-            filtered_df = df[(df["Pumping speed m3/hr "] >= pump_speed*0.9) & (df["Pumping speed m3/hr "] <= (pump_speed*1.1))]
-        except:
-            pass
+        # try:
+        #     filtered_df = df[(df["Pumping speed m3/hr "] >= pump_speed*0.9) & (df["Pumping speed m3/hr "] <= (pump_speed*1.1))]
+        # except:
+        #     pass
         filtered_df.round(2)
         cols = df.columns
         
-        if flow_rate:
-            Q = []
-            steady_state_df = filtered_df[filtered_df["Ult pressure(mTorr) "] <= pressure]
-            for So in steady_state_df[cols[2]].unique():
-                So = float(So)
-                S_eff = (So*C)/(So+C)
-                Q.append([So,round(S_eff*pressure,4)])
-            Q.sort(key=lambda x:abs(flow_rate-x[1]))
-            Q_table = pd.DataFrame(Q,columns=["Pumping Speed","Flow Rate"])
-            outputs.append(html.Br())
-            outputs.append(html.B(f"Flow Rates table :"))
-            outputs.append(html.Br())
-            columns = [{'headerName': i, 'field': i} for i in Q_table.columns]
-            data = Q_table.to_dict('records')
-            grid = dag.AgGrid(
-                id='flow-rate-div',
-                columnDefs=columns,
-                rowData=data,
-                columnSize="sizeToFit",
-                defaultColDef={"resizable": True, "sortable": True, "filter": True, "minWidth": 100},
-                dashGridOptions={"pagination": True, "paginationPageSize": 8, "domLayout": "autoHeight",'rowSelection': "single"},
-                style={"height": 500, "width": "100%"},
-                className="ag-theme-alpine"
-            )
-            outputs.append(html.Div(id="flow-rate-div", children=[grid],style={"padding":"10px"}))
+        # if flow_rate:
+        #     Q = []
+        #     steady_state_df = filtered_df[filtered_df["Ult pressure(mTorr) "] <= pressure]
+        #     for So in steady_state_df[cols[2]].unique():
+        #         So = float(So)
+        #         S_eff = (So*C)/(So+C)
+        #         Q.append([So,round(S_eff*pressure,4)])
+        #     Q.sort(key=lambda x:abs(flow_rate-x[1]))
+        #     Q_table = pd.DataFrame(Q,columns=["Pumping Speed","Flow Rate"])
+        #     outputs.append(html.Br())
+        #     outputs.append(html.B(f"Flow Rates table :"))
+        #     outputs.append(html.Br())
+        #     columns = [{'headerName': i, 'field': i} for i in Q_table.columns]
+        #     data = Q_table.to_dict('records')
+        #     grid = dag.AgGrid(
+        #         id='flow-rate-div',
+        #         columnDefs=columns,
+        #         rowData=data,
+        #         columnSize="sizeToFit",
+        #         defaultColDef={"resizable": True, "sortable": True, "filter": True, "minWidth": 100},
+        #         dashGridOptions={"pagination": True, "paginationPageSize": 8, "domLayout": "autoHeight",'rowSelection': "single"},
+        #         style={"height": 500, "width": "100%"},
+        #         className="ag-theme-alpine"
+        #     )
+        #     outputs.append(html.Div(id="flow-rate-div", children=[grid],style={"padding":"10px"}))
             
-            outputs.append(html.Div(id='Flow-Rate-Output'))
+        #     outputs.append(html.Div(id='Flow-Rate-Output'))
         
         filtered_df = filtered_df[filtered_df["Ult pressure(mTorr) "] <= pressure]
         filtered_df["Effective Pumping Speed (L/s)"] = 0.0
@@ -250,9 +325,11 @@ def calculate_downtimes(n_clicks, input1, input2, input3, pump_speed, table_data
         outputs.append(html.Br())
         outputs.append(html.B(f"Effective Speeds Table :"))
         outputs.append(html.Br())
-        filtered_df = filtered_df[(filtered_df["Effective Pumping Speed (L/s)"] >= 0.5*target_S_eff) & (filtered_df["Effective Pumping Speed (L/s)"] <= 1.5*target_S_eff)]
+        slider = slider/100 #put a slider
+        # filtered_df = filtered_df[(filtered_df["Effective Pumping Speed (L/s)"] >= slider*target_S_eff) & (filtered_df["Effective Pumping Speed (L/s)"] <= slider*target_S_eff)]
+        filtered_df["Pump_DownTimes"] = [calculate_downtimes_pipes(model,pressure,volume) for model in filtered_df["Model Name "]]
         filtered_df = filtered_df.sort_values("Total Equivalent Energy")
-        cols = filtered_df.columns[0:2].to_list() + ["Effective Pumping Speed (L/s)"] + filtered_df.columns[2:-1].to_list()
+        cols = filtered_df.columns[0:2].to_list() + ["Effective Pumping Speed (L/s)","Pump_DownTimes"] + filtered_df.columns[2:-2].to_list()
         columns = [{"field":col} for col in cols]
         filtered_df = filtered_df[cols]
         data = filtered_df.to_dict('records')
@@ -286,6 +363,83 @@ def calculate_downtimes(n_clicks, input1, input2, input3, pump_speed, table_data
     else:
         return dash.no_update
 
+def calculate_downtimes_pipes(model_name,target_pressure,volume):
+    '''
+    model_name : Model Name
+    target_pressure : Input Target Pressure
+    volume : chamber volume
+    '''
+    filename = f"{model_name}.txt"
+    location = "GRAPH_DATA"
+    if filename in os.listdir(location):
+        pressures,speeds = extract(filename,location,target_pressure)
+        # pressures = list(pressures) # [760] + list(pressures) + [target_pressure]
+        # speeds =  list(speeds) #[-1] + list(speeds) + [selected_rows[0]["Pumping speed m3/hr "]]
+        speeds = [speed*0.277777778 for speed in speeds]
+        actual_pressures = list(pressures) # + [760] + [target_pressure]
+        pressures = [(actual_pressures[i]+actual_pressures[i-1])/2 for i in range(1,len(pressures))]
+        actual_speeds = list(speeds)
+        print("ACTUAL SPEEDS:",actual_speeds)
+        new_speeds = []
+        for i in range(1,len(actual_speeds)):
+            new_speeds.append(10**(np.log10(actual_speeds[i-1]) + (((np.log10(pressures[i-1]/actual_pressures[i-1]))*(np.log10(actual_speeds[i]/actual_speeds[i-1])))/(np.log10(actual_pressures[i]/actual_pressures[i-1])))))
+        
+        speeds = new_speeds
+        pfs = []
+        conductances = []
+        mu = 0.0179
+        PI = 3.14
+        effective_speeds = []
+        pump_down_times = []
+        Q = []
+        n = len(pressures)
+        for i in range(n):
+            v=volume
+            So = speeds[i]
+            if i!=n-1:
+                p_ = (pressures[i] + pressures[i+1])/2
+                C = 0
+                for l,d in table_values:
+                    l,d = round(l,4),round(d,4)
+                    c = 0.0327*(d**4/(mu*l))*p_
+                    c = round(c,4)
+                    v += round(PI*(d/2)**2*l,4)
+                    C += 1/(c)
+                
+                constant_factor = (PI*1000*p_) / (128*mu*0.1)
+                for d in table_values_2:
+                    K = k_dict[1]
+                    d = round(d,4)
+                    c = constant_factor*K*((d*0.01)**3)
+                    c = round(c,4)
+                    C += 1/(c)
+
+                C = 2/C
+                conductances.append(C)
+                S_eff = (So*C)/(So+C)
+                effective_speeds.append(S_eff)
+                time = round(((v/S_eff)*math.log(pressures[i]/pressures[i+1])),4)
+                pump_down_times.append(time)
+                pf = (S_eff/(C+S_eff))*760
+                pfs.append(pf)
+                Q.append(pressures[i]*S_eff)
+            else:
+                conductances.append(-1)
+                effective_speeds.append(-1)
+                pump_down_times.append(round(((v/S_eff)*math.log(760/pressures[-1])),4))
+                pfs.append(-1)
+                Q.append(-1)
+            
+        conductances = list(map(lambda x:round(x,2), conductances))
+        effective_speeds = list(map(lambda x:round(x,2), effective_speeds))
+        pump_down_times = list(map(lambda x:round(x,2), pump_down_times))
+        speeds = list(map(lambda x:round(x,2), speeds))
+        pressures = list(map(lambda x:round(x,2), pressures))
+        Q = list(map(lambda x:round(x,2), Q))
+        pfs = list(map(lambda x:round(x,2), pfs))
+        print(pump_down_times)
+        return round(sum(pump_down_times),4)
+
 def extract(filename,location,target_pressure):
     filename = os.path.join(os.path.join(os.getcwd(),location),filename)
     values = [row.strip("\n").split("\t") for row in open(filename).readlines()]
@@ -309,9 +463,18 @@ def display_selected_row(selected_rows,target_pressure,volume):
         location = "GRAPH_DATA"
         if filename in os.listdir(location):
             pressures,speeds = extract(filename,location,target_pressure)
-            pressures = [760] + list(pressures) + [target_pressure]
-            speeds = [-1] + list(speeds) + [selected_rows[0]["Pumping speed m3/hr "]]
+            # pressures = list(pressures) # [760] + list(pressures) + [target_pressure]
+            # speeds =  list(speeds) #[-1] + list(speeds) + [selected_rows[0]["Pumping speed m3/hr "]]
             speeds = [speed*0.277777778 for speed in speeds]
+            actual_pressures = list(pressures) # + [760] + [target_pressure]
+            pressures = [(actual_pressures[i]+actual_pressures[i-1])/2 for i in range(1,len(pressures))]
+            actual_speeds = list(speeds)
+            print("ACTUAL SPEEDS:",actual_speeds)
+            new_speeds = []
+            for i in range(1,len(actual_speeds)):
+                new_speeds.append(10**(np.log10(actual_speeds[i-1]) + (((np.log10(pressures[i-1]/actual_pressures[i-1]))*(np.log10(actual_speeds[i]/actual_speeds[i-1])))/(np.log10(actual_pressures[i]/actual_pressures[i-1])))))
+            
+            speeds = new_speeds
             pfs = []
             conductances = []
             mu = 0.0179
@@ -321,6 +484,7 @@ def display_selected_row(selected_rows,target_pressure,volume):
             Q = []
             n = len(pressures)
             for i in range(n):
+                v=volume
                 So = speeds[i]
                 if i!=n-1:
                     p_ = (pressures[i] + pressures[i+1])/2
@@ -329,12 +493,13 @@ def display_selected_row(selected_rows,target_pressure,volume):
                         l,d = round(l,4),round(d,4)
                         c = 0.0327*(d**4/(mu*l))*p_
                         c = round(c,4)
+                        v += round(PI*(d/2)**2*l,4)
                         C += 1/(c)
                     
                     constant_factor = (PI*1000*p_) / (128*mu*0.1)
-                    for r,d in table_values_2:
-                        K = k_dict[int(r/d)]
-                        r,d = round(r,4),round(d,4)
+                    for d in table_values_2:
+                        K = k_dict[1]
+                        d = round(d,4)
                         c = constant_factor*K*((d*0.01)**3)
                         c = round(c,4)
                         C += 1/(c)
@@ -343,7 +508,7 @@ def display_selected_row(selected_rows,target_pressure,volume):
                     conductances.append(C)
                     S_eff = (So*C)/(So+C)
                     effective_speeds.append(S_eff)
-                    time = round(((volume/S_eff)*math.log(pressures[i]/pressures[i+1])),4)
+                    time = round(((v/S_eff)*math.log(pressures[i]/pressures[i+1])),4)
                     pump_down_times.append(time)
                     pf = (S_eff/(C+S_eff))*760
                     pfs.append(pf)
@@ -351,12 +516,10 @@ def display_selected_row(selected_rows,target_pressure,volume):
                 else:
                     conductances.append(-1)
                     effective_speeds.append(-1)
-                    pump_down_times.append(round(((volume/S_eff)*math.log(760/pressures[-1])),4))
+                    pump_down_times.append(round(((v/S_eff)*math.log(760/pressures[-1])),4))
                     pfs.append(-1)
                     Q.append(-1)
-                    
-            
-            print(len(conductances),len(effective_speeds),len(pump_down_times),len(pfs),len(Q),len(speeds),len(pressures))
+
             conductances = list(map(lambda x:round(x,2), conductances))
             effective_speeds = list(map(lambda x:round(x,2), effective_speeds))
             pump_down_times = list(map(lambda x:round(x,2), pump_down_times))
@@ -397,11 +560,20 @@ def display_selected_row(selected_rows,target_pressure,volume):
                 className="ag-theme-alpine"
             )
             outputs.append(html.Div(id="individual-pressures-div-2", children=[grid],style={"padding":"10px"}))
+        
+        fig = make_subplots(specs=[[{"secondary_y": False}]]) # Canvas for plots
+        fig.add_trace(go.Scatter(x=effective_speeds[1:-1], y=pressures[1:-1], name="Effective Speeds vs Pressure"))
             
-        outputs.extend([html.B("Select model(s) for the Pressure vs Time graph"),
+        fig['layout'].update(height=600,
+                                width=800,
+                                title='Performance Curve',
+                                )
+        fig.update_xaxes(title_text="Effective Pumping Speed m3/hr")
+        fig.update_yaxes(title_text="Pressure Torr")
+
+        outputs.extend([
         html.Br(),
-        dcc.Dropdown(id="graph-dropdown",options=selected_row["Model Name "].to_list(),multi=True,value=[],clearable=True),
-        html.Div(id="graph-output"),
+        dcc.Graph(figure=fig),
         html.Br(),
         html.Br()])
         return html.Div(outputs)
