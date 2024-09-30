@@ -396,39 +396,36 @@ def calculate_downtimes_pipes(model_name,target_pressure,volume):
         for i in range(n):
             v=volume
             So = speeds[i]
-            if i!=n-1:
-                p_ = (pressures[i])
-                C = 0
-                for l,d in table_values:
-                    l,d = round(l,4),round(d,4)
-                    c = 0.0327*(d**4/(mu*l))*p_
-                    c = round(c,4)
-                    v += round(PI*(d/2)**2*l,4) * 10**(-3)
-                    C += 1/(c)
-                
-                constant_factor = (PI*1000*p_) / (128*mu*0.1)
-                for d in table_values_2:
-                    K = k_dict[1]
-                    d = round(d,4)
-                    c = constant_factor*K*((d*0.01)**3)
-                    c = round(c,4)
-                    C += 1/(c)
+            
+            p_ = (pressures[i])
+            C = 0
+            for l,d in table_values:
+                l,d = round(l,4),round(d,4)
+                c = 0.0327*(d**4/(mu*l))*p_
+                c = round(c,4)
+                v += round(PI*(d/2)**2*l,4) * 10**(-3)
+                C += 1/(c)
+            
+            constant_factor = (PI*1000*p_) / (128*mu*0.1)
+            for d in table_values_2:
+                K = k_dict[1]
+                d = round(d,4)
+                c = constant_factor*K*((d*0.01)**3)
+                c = round(c,4)
+                C += 1/(c)
 
-                C = 1/C
-                conductances.append(C)
-                S_eff = (So*C)/(So+C)
-                effective_speeds.append(S_eff)
+            C = 1/C
+            conductances.append(C)
+            S_eff = (So*C)/(So+C)
+            effective_speeds.append(S_eff)
+            if i!=n-1:
                 time = round(((v/S_eff)*math.log(pressures[i]/pressures[i+1])),4)
                 pump_down_times.append(time)
-                pf = (S_eff/(C+S_eff))*760
-                pfs.append(pf)
-                Q.append(pressures[i]*S_eff)
             else:
-                conductances.append(-1)
-                effective_speeds.append(-1)
-                pump_down_times.append(round(((v/S_eff)*math.log(760/pressures[-1])),4))
-                pfs.append(-1)
-                Q.append(-1)
+                pump_down_times.append(round(((v/S_eff)*math.log(pressures[i]/target_pressure)),4))
+            pf = (S_eff/(C+S_eff))*760
+            pfs.append(pf)
+            Q.append(pressures[i]*S_eff)
             
         conductances = list(map(lambda x:round(x,2), conductances))
         effective_speeds = list(map(lambda x:round(x,2), effective_speeds))
@@ -437,7 +434,6 @@ def calculate_downtimes_pipes(model_name,target_pressure,volume):
         pressures = list(map(lambda x:round(x,2), pressures))
         Q = list(map(lambda x:round(x,2), Q))
         pfs = list(map(lambda x:round(x,2), pfs))
-        print(pump_down_times)
         return round(sum(pump_down_times),4)
 
 def extract(filename,location,target_pressure):
@@ -489,47 +485,43 @@ def display_selected_row(selected_rows,target_pressure,volume):
                 outputs.append(html.Br())
                 outputs.append(html.P(f"Calculating with speed : {So}"))
                 
-                if i!=n-1:
-                    p_ = (pressures[i])
-                    C = 0
-                    outputs.append(html.P(f"Average Pressure p_ = {p_}"))
-                    for l,d in table_values:
-                        l,d = round(l,4),round(d,4)
-                        c = 0.0327*(d**4/(mu*l))*p_
-                        c = round(c,4)
-                        v += round(PI*(d/2)**2*l,4) * 10**(-3)
-                        C += 1/(c)
-                        outputs.append(html.P(f"Conductance for length {l}, and diameter {d} = {0.0327}*({d}^4/{mu}*{l})*{p_} = {c}"))
-                    
-                    constant_factor = (PI*1000*p_) / (128*mu*0.1)
-                    outputs.append(html.P(f"Constant factor in calculation ({PI}*Average_Pressure*1000)/(128*mu*0.1) = {constant_factor}"))
-                    for d in table_values_2:
-                        K = k_dict[1]
-                        d = round(d,4)
-                        c = constant_factor*K*((d*0.01)**3)
-                        c = round(c,4)
-                        C += 1/(c)
-                        outputs.append(html.P(f"Conductance calculated for Bend with diameter {d} = {constant_factor} * {K} * ({d}*0.01)^3  = {c}"))
+                p_ = (pressures[i])
+                C = 0
+                outputs.append(html.P(f"Average Pressure p_ = {p_}"))
+                for l,d in table_values:
+                    l,d = round(l,4),round(d,4)
+                    c = 0.0327*(d**4/(mu*l))*p_
+                    c = round(c,4)
+                    v += round(PI*(d/2)**2*l,4) * 10**(-3)
+                    C += 1/(c)
+                    outputs.append(html.P(f"Conductance for length {l}, and diameter {d} = {0.0327}*({d}^4/{mu}*{l})*{p_} = {c}"))
+                
+                constant_factor = (PI*1000*p_) / (128*mu*0.1)
+                outputs.append(html.P(f"Constant factor in calculation ({PI}*Average_Pressure*1000)/(128*mu*0.1) = {constant_factor}"))
+                for d in table_values_2:
+                    K = k_dict[1]
+                    d = round(d,4)
+                    c = constant_factor*K*((d*0.01)**3)
+                    c = round(c,4)
+                    C += 1/(c)
+                    outputs.append(html.P(f"Conductance calculated for Bend with diameter {d} = {constant_factor} * {K} * ({d}*0.01)^3  = {c}"))
 
-                    C = 1/C
-                    outputs.append(html.P(f"Overall Conductance for this speed = {C}"))
-                    conductances.append(C)
-                    S_eff = (So*C)/(So+C)
-                    outputs.append(html.P(f"Effective Pumping Speed S_eff = {So}*{C}/({So}+{C}) = {S_eff}"))
-                    effective_speeds.append(S_eff)
+                C = 1/C
+                outputs.append(html.P(f"Overall Conductance for this speed = {C}"))
+                conductances.append(C)
+                S_eff = (So*C)/(So+C)
+                outputs.append(html.P(f"Effective Pumping Speed S_eff = {So}*{C}/({So}+{C}) = {S_eff}"))
+                effective_speeds.append(S_eff)
+                if i!=n-1:
                     time = round(((v/S_eff)*math.log(pressures[i]/pressures[i+1])),4)
                     outputs.append(html.P(f"Pump Down Time t = ({v}/{S_eff})*log({pressures[i]}/{pressures[i+1]}) = {time}"))
                     pump_down_times.append(time)
-                    pf = (S_eff/(C+S_eff))*760
-                    pfs.append(pf)
-                    Q.append(pressures[i]*S_eff)
                 else:
-                    conductances.append(-1)
-                    effective_speeds.append(-1)
-                    pump_down_times.append(round(((v/S_eff)*math.log(760/pressures[-1])),4))
-                    pfs.append(-1)
-                    Q.append(-1)
-
+                    pump_down_times.append(round(((v/S_eff)*math.log(pressures[i]/target_pressure)),4))
+                pf = (S_eff/(C+S_eff))*760
+                pfs.append(pf)
+                Q.append(pressures[i]*S_eff)
+            
             conductances = list(map(lambda x:round(x,2), conductances))
             effective_speeds = list(map(lambda x:round(x,2), effective_speeds))
             pump_down_times = list(map(lambda x:round(x,2), pump_down_times))
