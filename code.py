@@ -3,6 +3,7 @@ from dash import html, dcc, Input, Output, State
 import dash_bootstrap_components as dbc
 from dash import dash_table
 import math
+import openpyxl.workbook
 import pandas as pd
 import numpy as np
 import plotly.graph_objects as go
@@ -10,6 +11,7 @@ import dash_ag_grid as dag
 import os
 from plotly.subplots import make_subplots
 import io
+import openpyxl
 import base64
 
 app = dash.Dash(__name__,external_stylesheets=[dbc.themes.UNITED, dbc.icons.BOOTSTRAP],suppress_callback_exceptions=True)
@@ -116,7 +118,12 @@ def update_output(selected):
             ),
 
             html.Br(),
-
+            dcc.Markdown("""**Use the template file and fill the details of your configuration. You can add more rows.
+                         Please unblock safety measures that blocks the macro in the excel file by going to the properties of the file.
+                         Enable micros in the excel sheet.
+                         While uploading make sure the file has only a single sheet in the workbook and it 
+                         is an .xlsm file.**"""),
+            html.Br(),
             dcc.Upload(
                 id='upload-data',
                 children=html.Div([
@@ -159,57 +166,79 @@ def download_template(n_clicks):
         return dcc.send_file("template.xlsm")
 
 @app.callback(
-    Output('output-data-upload', 'children'),
+    [Output('output-data-upload', 'children',allow_duplicate=True),
+    Output('input-table', 'data',allow_duplicate=True),
+    Output('input-table-2','data',allow_duplicate=True)],
     [Input('upload-data', 'contents')],
-    [State('upload-data', 'filename')]
+    State('upload-data', 'filename'),
+    State('input-table','data'),
+    State('input-table-2','data'),
+    State('input-table','columns'),
+    State('input-table-2','columns'),prevent_initial_call=True
 )
-def handle_uploaded_file(contents, filename):
+def handle_uploaded_file(contents, filename,rows_1,rows_2,cols1,cols2):
     if contents is not None:
-        content_type, content_string = contents.split(',')
+        _, content_string = contents.split(',')
         decoded = base64.b64decode(content_string)
-
+        print(type(contents))
         if filename.endswith('.xlsm'):
             try:
                 df = pd.read_excel(io.BytesIO(decoded), engine='openpyxl')  # Pandas does not directly support xlsm read, so this is just for illustration
+                data = df.values
+                print(data)
+                
+                table_1 = []
+                table_2 = []
+                for row in data:
+                    if "bend" in row[1].lower():
+                        table_2.append((row[2]))
+                    else:
+                        table_1.append([(row[2]),(row[4])])
+                    print(row[2],row[4])
+                rows_1=[]
+                rows_2=[]
+                for val in table_2:rows_2.append({'diameter':val})
+                for a,b in table_1:rows_1.append({'length':a,'diameter':b})
 
-                return html.Div([
+                return [html.Div([
                     html.H5(f"Uploaded file: {filename}"),
                     html.Hr(),
                     html.H6("File content preview:"),
-                    # Display the content of the first few rows of the sheet (example)
                     dcc.Markdown(df.head().to_markdown())
-                ])
+                ]),rows_1,rows_2]
             except Exception as e:
                 return html.Div([
                     'There was an error processing the file.',
                     html.Br(),
                     f'Error: {e}'
-                ])
+                ],rows_1,rows_2)
         else:
-            return html.Div([
+            return [html.Div([
                 'Please upload a valid .xlsm file.'
-            ])
+            ]),rows_1,rows_2]
 
 
 @app.callback(
-    Output('input-table', 'data'),
+    Output('input-table', 'data',allow_duplicate=True),
     Input('add-row-button', 'n_clicks'),
     State('input-table', 'data'),
-    State('input-table', 'columns')
+    State('input-table', 'columns'),prevent_initial_call=True
 )
 def add_row(n_clicks, rows, columns):
     if n_clicks > 0:
+        print(rows,columns)
         rows.append({c['id']: '' for c in columns})
     return rows
 
 @app.callback(
-    Output('input-table-2', 'data'),
+    Output('input-table-2', 'data',allow_duplicate=True),
     Input('add-row-button-2', 'n_clicks'),
     State('input-table-2', 'data'),
-    State('input-table-2', 'columns')
+    State('input-table-2', 'columns'),prevent_initial_call=True
 )
 def add_row_2(n_clicks, rows, columns):
     if n_clicks > 0:
+        print(rows,columns)
         rows.append({c['id']: '' for c in columns})
     return rows
 
