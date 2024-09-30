@@ -180,12 +180,11 @@ def handle_uploaded_file(contents, filename,rows_1,rows_2,cols1,cols2):
     if contents is not None:
         _, content_string = contents.split(',')
         decoded = base64.b64decode(content_string)
-        print(type(contents))
         if filename.endswith('.xlsm'):
             try:
                 df = pd.read_excel(io.BytesIO(decoded), engine='openpyxl')  # Pandas does not directly support xlsm read, so this is just for illustration
                 data = df.values
-                print(data)
+                
                 
                 table_1 = []
                 table_2 = []
@@ -194,7 +193,7 @@ def handle_uploaded_file(contents, filename,rows_1,rows_2,cols1,cols2):
                         table_2.append((row[2]))
                     else:
                         table_1.append([(row[2]),(row[4])])
-                    print(row[2],row[4])
+                    
                 rows_1=[]
                 rows_2=[]
                 for val in table_2:rows_2.append({'diameter':val})
