@@ -273,7 +273,7 @@ def calculate_downtimes(n_clicks, input1, input2, input3, table_data,table_data_
             c = round(c,4)
             C += 1/(c)
 
-        C = 2/C
+        C = 1/C
         outputs.append(html.B(f"Conductance Calculated C = {C} L/s"))
         C = round(C,4)
         filtered_df  = df
@@ -379,7 +379,7 @@ def calculate_downtimes_pipes(model_name,target_pressure,volume):
         actual_pressures = list(pressures) # + [760] + [target_pressure]
         pressures = [(actual_pressures[i]+actual_pressures[i-1])/2 for i in range(1,len(pressures))]
         actual_speeds = list(speeds)
-        print("ACTUAL SPEEDS:",actual_speeds)
+        
         new_speeds = []
         for i in range(1,len(actual_speeds)):
             new_speeds.append(10**(np.log10(actual_speeds[i-1]) + (((np.log10(pressures[i-1]/actual_pressures[i-1]))*(np.log10(actual_speeds[i]/actual_speeds[i-1])))/(np.log10(actual_pressures[i]/actual_pressures[i-1])))))
@@ -397,13 +397,13 @@ def calculate_downtimes_pipes(model_name,target_pressure,volume):
             v=volume
             So = speeds[i]
             if i!=n-1:
-                p_ = (pressures[i] + pressures[i+1])/2
+                p_ = (pressures[i])
                 C = 0
                 for l,d in table_values:
                     l,d = round(l,4),round(d,4)
                     c = 0.0327*(d**4/(mu*l))*p_
                     c = round(c,4)
-                    v += round(PI*(d/2)**2*l,4)
+                    v += round(PI*(d/2)**2*l,4) * 10**(-3)
                     C += 1/(c)
                 
                 constant_factor = (PI*1000*p_) / (128*mu*0.1)
@@ -414,7 +414,7 @@ def calculate_downtimes_pipes(model_name,target_pressure,volume):
                     c = round(c,4)
                     C += 1/(c)
 
-                C = 2/C
+                C = 1/C
                 conductances.append(C)
                 S_eff = (So*C)/(So+C)
                 effective_speeds.append(S_eff)
@@ -469,7 +469,7 @@ def display_selected_row(selected_rows,target_pressure,volume):
             actual_pressures = list(pressures) # + [760] + [target_pressure]
             pressures = [(actual_pressures[i]+actual_pressures[i-1])/2 for i in range(1,len(pressures))]
             actual_speeds = list(speeds)
-            print("ACTUAL SPEEDS:",actual_speeds)
+            
             new_speeds = []
             for i in range(1,len(actual_speeds)):
                 new_speeds.append(10**(np.log10(actual_speeds[i-1]) + (((np.log10(pressures[i-1]/actual_pressures[i-1]))*(np.log10(actual_speeds[i]/actual_speeds[i-1])))/(np.log10(actual_pressures[i]/actual_pressures[i-1])))))
@@ -486,29 +486,39 @@ def display_selected_row(selected_rows,target_pressure,volume):
             for i in range(n):
                 v=volume
                 So = speeds[i]
+                outputs.append(html.Br())
+                outputs.append(html.P(f"Calculating with speed : {So}"))
+                
                 if i!=n-1:
-                    p_ = (pressures[i] + pressures[i+1])/2
+                    p_ = (pressures[i])
                     C = 0
+                    outputs.append(html.P(f"Average Pressure p_ = {p_}"))
                     for l,d in table_values:
                         l,d = round(l,4),round(d,4)
                         c = 0.0327*(d**4/(mu*l))*p_
                         c = round(c,4)
-                        v += round(PI*(d/2)**2*l,4)
+                        v += round(PI*(d/2)**2*l,4) * 10**(-3)
                         C += 1/(c)
+                        outputs.append(html.P(f"Conductance for length {l}, and diameter {d} = {0.0327}*({d}^4/{mu}*{l})*{p_} = {c}"))
                     
                     constant_factor = (PI*1000*p_) / (128*mu*0.1)
+                    outputs.append(html.P(f"Constant factor in calculation ({PI}*Average_Pressure*1000)/(128*mu*0.1) = {constant_factor}"))
                     for d in table_values_2:
                         K = k_dict[1]
                         d = round(d,4)
                         c = constant_factor*K*((d*0.01)**3)
                         c = round(c,4)
                         C += 1/(c)
+                        outputs.append(html.P(f"Conductance calculated for Bend with diameter {d} = {constant_factor} * {K} * ({d}*0.01)^3  = {c}"))
 
-                    C = 2/C
+                    C = 1/C
+                    outputs.append(html.P(f"Overall Conductance for this speed = {C}"))
                     conductances.append(C)
                     S_eff = (So*C)/(So+C)
+                    outputs.append(html.P(f"Effective Pumping Speed S_eff = {So}*{C}/({So}+{C}) = {S_eff}"))
                     effective_speeds.append(S_eff)
                     time = round(((v/S_eff)*math.log(pressures[i]/pressures[i+1])),4)
+                    outputs.append(html.P(f"Pump Down Time t = ({v}/{S_eff})*log({pressures[i]}/{pressures[i+1]}) = {time}"))
                     pump_down_times.append(time)
                     pf = (S_eff/(C+S_eff))*760
                     pfs.append(pf)
@@ -545,21 +555,6 @@ def display_selected_row(selected_rows,target_pressure,volume):
             outputs.append(html.Br())
             outputs.append(html.B(f"Total Pump Down Time t = {sum(pump_down_times)} s"))
             outputs.append(html.Br())
-
-            another_table_2 = pd.DataFrame({"Pressure (Torr)":pressures,"Pumping speed L/s ":speeds,"Conductance L/s":conductances,"Effective Speed L/s":effective_speeds,"Pf":pfs,"Flow Rate":Q})
-            columns = [{'headerName': i, 'field': i} for i in another_table_2.columns]
-            data = another_table_2.to_dict('records')
-            grid = dag.AgGrid(
-                id='flow-rate-div-2',
-                columnDefs=columns,
-                rowData=data,
-                columnSize="sizeToFit",
-                defaultColDef={"resizable": True, "sortable": True, "filter": True, "minWidth": 100},
-                dashGridOptions={"pagination": True, "paginationPageSize": 8, "domLayout": "autoHeight",'rowSelection': "single"},
-                style={"height": 500, "width": "100%"},
-                className="ag-theme-alpine"
-            )
-            outputs.append(html.Div(id="individual-pressures-div-2", children=[grid],style={"padding":"10px"}))
         
         fig = make_subplots(specs=[[{"secondary_y": False}]]) # Canvas for plots
         fig.add_trace(go.Scatter(x=effective_speeds[1:-1], y=pressures[1:-1], name="Effective Speeds vs Pressure"))
