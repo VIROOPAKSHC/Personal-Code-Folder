@@ -577,14 +577,14 @@ def display_selected_row(selected_rows,target_pressure,volume):
             outputs.append(html.Br())
         
         fig = make_subplots(specs=[[{"secondary_y": False}]]) # Canvas for plots
-        fig.add_trace(go.Scatter(x=effective_speeds[1:-1], y=pressures[1:-1], name="Effective Speeds vs Pressure"))
+        fig.add_trace(go.Scatter(x=pressures[1:-1], y=pump_down_times,name="Pressure vs Pump Down Times"))
             
         fig['layout'].update(height=600,
                                 width=800,
                                 title='Performance Curve',
                                 )
-        fig.update_xaxes(title_text="Effective Pumping Speed m3/hr")
-        fig.update_yaxes(title_text="Pressure Torr")
+        fig.update_xaxes(title_text="Pressure Torr")
+        fig.update_yaxes(title_text="Pump Down Times")
 
         outputs.extend([
         html.Br(),
