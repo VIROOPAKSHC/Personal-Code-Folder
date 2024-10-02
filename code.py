@@ -3,7 +3,8 @@ from dash import html, dcc, Input, Output, State
 import dash_bootstrap_components as dbc
 from dash import dash_table
 import math
-import openpyxl.workbook
+from sklearn.tree import DecisionTreeRegressor
+from sklearn.model_selection import train_test_split
 import pandas as pd
 import numpy as np
 import plotly.graph_objects as go
@@ -11,8 +12,8 @@ import dash_ag_grid as dag
 import os
 from plotly.subplots import make_subplots
 import io
-import openpyxl
 import base64
+import numpy as np
 
 app = dash.Dash(__name__,external_stylesheets=[dbc.themes.UNITED, dbc.icons.BOOTSTRAP],suppress_callback_exceptions=True)
 k_dict = {0:0.017,1:0.05,2:0.083,4:0.073,6:0.056,8:0.042,10:0.034,12:0.029,14:0.026}
@@ -391,16 +392,33 @@ def calculate_downtimes(n_clicks, input1, input2, input3, table_data,table_data_
     else:
         return dash.no_update
 
+
+def extrapolate(pressures,speeds,initial_pressure, target_pressure):
+    dt = DecisionTreeRegressor()
+    X,y = pressures,speeds
+    x = []
+    for i in range(len(X)):
+        x.append([np.log10(X[i])])
+    x = np.array(x)
+    x_train,x_test,y_train,y_test = train_test_split(x,np.array(y),test_size=0.1,shuffle=True,random_state=42)
+    dt = DecisionTreeRegressor()
+    dt.fit(x_train.reshape(-1,1),y_train)
+    new_pressure_set = np.arange(target_pressure,initial_pressure,30)
+    new_pressure_mod = np.array([np.log10(v) for v in new_pressure_set])
+    new_speeds = dt.predict(new_pressure_mod.reshape(-1,1))
+    return new_pressure_set[::-1],new_speeds[::-1]
+
 def calculate_downtimes_pipes(model_name,target_pressure,volume):
     '''
     model_name : Model Name
     target_pressure : Input Target Pressure
     volume : chamber volume
     '''
-    filename = f"{model_name}.txt"
-    location = "GRAPH_DATA"
+    filename = f"{model_name}.csv"
+    location = "Phase2_graphdata"
     if filename in os.listdir(location):
         pressures,speeds = extract(filename,location,target_pressure)
+        pressures,speeds = extrapolate(pressures,speeds,760,target_pressure)
         # pressures = list(pressures) # [760] + list(pressures) + [target_pressure]
         # speeds =  list(speeds) #[-1] + list(speeds) + [selected_rows[0]["Pumping speed m3/hr "]]
         speeds = [speed*0.277777778 for speed in speeds]
@@ -466,7 +484,7 @@ def calculate_downtimes_pipes(model_name,target_pressure,volume):
 
 def extract(filename,location,target_pressure):
     filename = os.path.join(os.path.join(os.getcwd(),location),filename)
-    values = [row.strip("\n").split("\t") for row in open(filename).readlines()]
+    values = [row.strip("ï»¿\n").split(",") for row in open(filename).readlines()]
     values = [[float(v),float(w)] for v,w in values]
     values = [v for v in values if (target_pressure<=v[0]<=760)]
     values.sort(key=lambda x:x[0],reverse=True)
@@ -483,10 +501,11 @@ def display_selected_row(selected_rows,target_pressure,volume):
         selected_row = df[df["Pumping speed m3/hr "] == selected_rows[0]["Pumping speed m3/hr "]].sort_values("Total Equivalent Energy")
         outputs = []
         model_name = selected_row["Model Name "].values[0]
-        filename = f"{model_name}.txt"
-        location = "GRAPH_DATA"
+        filename = f"{model_name}.csv"
+        location = "Phase2_graphdata"
         if filename in os.listdir(location):
             pressures,speeds = extract(filename,location,target_pressure)
+            pressures,speeds = extrapolate(pressures,speeds,760,target_pressure)
             # pressures = list(pressures) # [760] + list(pressures) + [target_pressure]
             # speeds =  list(speeds) #[-1] + list(speeds) + [selected_rows[0]["Pumping speed m3/hr "]]
             speeds = [speed*0.277777778 for speed in speeds]
