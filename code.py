@@ -272,7 +272,7 @@ def calculate_downtimes(n_clicks, input1, input2, input3, table_data,table_data_
             pressure = pressure*0.76
         volume = input3
         C = 0
-        mu = 0.0179
+        mu = 0.0001782
         p_ = round((pressure+760)/2,3)
         global table_values
         global table_values_2
@@ -291,14 +291,18 @@ def calculate_downtimes(n_clicks, input1, input2, input3, table_data,table_data_
         for l,d in table_values:
             l,d = round(l,4),round(d,4)
             c = 0.0327*(d**4/(mu*l))*p_
+            outputs.append(html.P(f"Conductance calculated for pipe with length {l}cm and diameter {d} cm = (({0.0327}*{d}^4)/({mu}*{l}))*{p_} = {c} L/s"))
+            outputs.append(html.Br())
             c = round(c,4)
             C += 1/(c)
         
-        constant_factor = (PI*1000*p_) / (128*mu*0.1)
+        constant_factor = (PI*1000*133.3*p_) / (128*mu*0.1)
         for d in table_values_2:
             K = k_dict[1] # r==d
             d = round(d,4)
             c = constant_factor*K*((d*0.01)**3)
+            outputs.append(html.P(f"Conductance calculated for bend with diameter {d}cm = (({PI}*{1000}*{133.3}*{p_})/({128}*{mu}*{0.1}))*{K}*(({d}*{0.01})^3) = {c} L/s"))
+            outputs.append(html.Br())
             c = round(c,4)
             C += 1/(c)
 
@@ -600,7 +604,7 @@ def display_selected_row(selected_rows,target_pressure,volume):
             
         fig['layout'].update(height=600,
                                 width=800,
-                                title='Performance Curve',
+                                title='Pump Down Curve',
                                 )
         fig.update_yaxes(title_text="Pressure Torr")
         fig.update_xaxes(title_text="Pump Down Times")
