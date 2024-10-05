@@ -580,7 +580,9 @@ def display_selected_row(selected_rows,target_pressure,volume):
                     outputs.append(html.P(f"Pump Down Time t = ({v}/{S_eff})*log({pressures[i]}/{pressures[i+1]}) = {time}"))
                     pump_down_times.append(time)
                 else:
-                    pump_down_times.append(round(((v/S_eff)*math.log(pressures[i]/target_pressure)),4))
+                    time = round(((v/S_eff)*math.log(pressures[i]/target_pressure)),4)
+                    pump_down_times.append(time)
+                    outputs.append(html.P(f"Pump Down Time t = ({v}/{S_eff})*log({pressures[i]}/{target_pressure}) = {time}"))
                 pf = (S_eff/(C+S_eff))*760
                 pfs.append(pf)
                 Q.append(pressures[i]*S_eff)
