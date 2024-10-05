@@ -449,7 +449,7 @@ def calculate_downtimes_pipes(model_name,target_pressure,volume):
         speeds = new_speeds
         pfs = []
         conductances = []
-        mu = 0.0179
+        mu = 0.0001782
         PI = 3.14
         effective_speeds = []
         pump_down_times = []
@@ -468,7 +468,7 @@ def calculate_downtimes_pipes(model_name,target_pressure,volume):
                 v += round(PI*(d/2)**2*l,4) * 10**(-3)
                 C += 1/(c)
             
-            constant_factor = (PI*1000*p_) / (128*mu*0.1)
+            constant_factor = (PI*1000*133.3*p_) / (128*mu*0.1)
             for d in table_values_2:
                 K = k_dict[1]
                 d = round(d,4)
@@ -536,7 +536,7 @@ def display_selected_row(selected_rows,target_pressure,volume):
             speeds = new_speeds
             pfs = []
             conductances = []
-            mu = 0.0179
+            mu = 0.0001782
             PI = 3.14
             effective_speeds = []
             pump_down_times = []
@@ -559,7 +559,7 @@ def display_selected_row(selected_rows,target_pressure,volume):
                     C += 1/(c)
                     outputs.append(html.P(f"Conductance for length {l}, and diameter {d} = {0.0327}*({d}^4/{mu}*{l})*{p_} = {c}"))
                 
-                constant_factor = (PI*1000*p_) / (128*mu*0.1)
+                constant_factor = (PI*1000*133.3*p_) / (128*mu*0.1)
                 outputs.append(html.P(f"Constant factor in calculation ({PI}*Average_Pressure*1000)/(128*mu*0.1) = {constant_factor}"))
                 for d in table_values_2:
                     K = k_dict[1]
@@ -681,3 +681,4 @@ def display_selected_row_2(selected_rows,pressure):
 # Run the app
 if __name__ == '__main__':
     app.run(host='127.0.0.1',port='8050',debug=True)
+  
