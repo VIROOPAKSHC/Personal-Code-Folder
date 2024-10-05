@@ -355,28 +355,29 @@ def calculate_downtimes(n_clicks, input1, input2, input3, table_data,table_data_
         #     outputs.append(html.Div(id='Flow-Rate-Output'))
         
         filtered_df = filtered_df[filtered_df["Ult pressure(mTorr) "] <= pressure]
-        filtered_df["Effective Pumping Speed (L/s)"] = 0.0
-        for So in filtered_df["Pumping speed m3/hr "].unique():
-            So_org = So
-            So = float(So)*0.277778
-            S_eff = (So*C)/(So+C)
-            S_eff = round(S_eff,4)
-            filtered_df.loc[filtered_df["Pumping speed m3/hr "] == So_org,"Effective Pumping Speed (L/s)"] = round(S_eff,2)
+        # filtered_df["Effective Pumping Speed (L/s)"] = 0.0
+        # for So in filtered_df["Pumping speed m3/hr "].unique():
+        #     So_org = So
+        #     So = float(So)*0.277778
+        #     S_eff = (So*C)/(So+C)
+        #     S_eff = round(S_eff,4)
+        #     filtered_df.loc[filtered_df["Pumping speed m3/hr "] == So_org,"Effective Pumping Speed (L/s)"] = round(S_eff,2)
         outputs.append(html.Br())
         target_S_eff = (volume/tp)*math.log(760/pressure)
         target_S_eff = round(target_S_eff,4)
         outputs.append(html.P(f"Effective Speed calculation = ({volume}/{tp}) * log10(({760})/{pressure}) = {target_S_eff}"))
         outputs.append(html.B(f"Effective Speed S_eff = {target_S_eff} L/S"))
         outputs.append(html.Br())
-        outputs.append(html.B(f"Effective Speeds Table :"))
+        outputs.append(html.B(f"Table :"))
         outputs.append(html.Br())
-        target_S = round((target_S_eff*C)/(C-target_S_eff),4)
+        target_S = round((target_S_eff*C)/(C-target_S_eff),4)*3.6
         outputs.append(html.P(f"Pumping Speed for Comparision = ({target_S_eff}*{C})/({C}-{target_S_eff}) = {target_S} m3/hr"))
         slider = slider/100 #put a slider
         filtered_df = filtered_df[(filtered_df["Pumping speed m3/hr "] >= (1-slider)*target_S) & (filtered_df["Pumping speed m3/hr "] <= (1+slider)*target_S)]
         filtered_df["Pump_DownTimes"] = [calculate_downtimes_pipes(model,pressure,volume) for model in filtered_df["Model Name "]]
         filtered_df = filtered_df.sort_values("Total Equivalent Energy")
-        cols = filtered_df.columns[0:2].to_list() + ["Effective Pumping Speed (L/s)","Pump_DownTimes"] + filtered_df.columns[2:-2].to_list()
+        # cols = filtered_df.columns[0:2].to_list() + ["Pump_DownTimes"] + filtered_df.columns[2:-1].to_list()
+        cols = ["Supplier ","Model Name ","Pumping speed m3/hr ","Ult pressure(mTorr) ","Pump_DownTimes","Total Equivalent Energy","Inlet ","exhaust ","PCWmin lpm","Power at ultimate KW ","Heat Balance","N2 kWh/year","DE KWh/ year ","PCW KWh/year "]
         columns = [{"field":col} for col in cols]
         filtered_df = filtered_df[cols]
         data = filtered_df.to_dict('records')
