@@ -370,8 +370,10 @@ def calculate_downtimes(n_clicks, input1, input2, input3, table_data,table_data_
         outputs.append(html.Br())
         outputs.append(html.B(f"Effective Speeds Table :"))
         outputs.append(html.Br())
+        target_S = round((target_S_eff*C)/(C-target_S_eff),4)
+        outputs.append(html.P(f"Pumping Speed for Comparision = ({target_S_eff}*{C})/({C}-{target_S_eff}) = {target_S} m3/hr"))
         slider = slider/100 #put a slider
-        filtered_df = filtered_df[(filtered_df["Effective Pumping Speed (L/s)"] >= (1-slider)*target_S_eff) & (filtered_df["Effective Pumping Speed (L/s)"] <= (1+slider)*target_S_eff)]
+        filtered_df = filtered_df[(filtered_df["Pumping speed m3/hr "] >= (1-slider)*target_S) & (filtered_df["Pumping speed m3/hr "] <= (1+slider)*target_S)]
         filtered_df["Pump_DownTimes"] = [calculate_downtimes_pipes(model,pressure,volume) for model in filtered_df["Model Name "]]
         filtered_df = filtered_df.sort_values("Total Equivalent Energy")
         cols = filtered_df.columns[0:2].to_list() + ["Effective Pumping Speed (L/s)","Pump_DownTimes"] + filtered_df.columns[2:-2].to_list()
@@ -681,4 +683,3 @@ def display_selected_row_2(selected_rows,pressure):
 # Run the app
 if __name__ == '__main__':
     app.run(host='127.0.0.1',port='8050',debug=True)
-  
