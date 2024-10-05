@@ -279,7 +279,7 @@ def calculate_downtimes(n_clicks, input1, input2, input3, table_data,table_data_
         table_values = []
         table_values_2 = []
         PI = 3.14
-        target_S_eff = (volume/tp)*math.log(760/pressure)
+        
         
         for row in table_data:
             table_values.append([row['length'],row['diameter']])
@@ -288,13 +288,17 @@ def calculate_downtimes(n_clicks, input1, input2, input3, table_data,table_data_
             table_values_2.append(row['diameter'])
 
         outputs=[]
+        cs = []
         for l,d in table_values:
             l,d = round(l,4),round(d,4)
             c = 0.0327*(d**4/(mu*l))*p_
             outputs.append(html.P(f"Conductance calculated for pipe with length {l}cm and diameter {d} cm = (({0.0327}*{d}^4)/({mu}*{l}))*{p_} = {c} L/s"))
-            outputs.append(html.Br())
+            
             c = round(c,4)
+            cs.append(c)
             C += 1/(c)
+            outputs.append(html.P(f"Inverse of Conductance 1/c = {1/c}"))
+            outputs.append(html.Br())
         
         constant_factor = (PI*1000*133.3*p_) / (128*mu*0.1)
         for d in table_values_2:
@@ -304,11 +308,16 @@ def calculate_downtimes(n_clicks, input1, input2, input3, table_data,table_data_
             outputs.append(html.P(f"Conductance calculated for bend with diameter {d}cm = (({PI}*{1000}*{133.3}*{p_})/({128}*{mu}*{0.1}))*{K}*(({d}*{0.01})^3) = {c} L/s"))
             outputs.append(html.Br())
             c = round(c,4)
+            cs.append(c)
+            outputs.append(html.P(f"Inverse of Conductance 1/c = {1/c}"))
             C += 1/(c)
-
+        
+        
+        outputs.append(html.P(f"Inverse Conductance values addition: 1/C = {" + ".join([str(1/c) for c in cs])}"))
         C = 1/C
-        outputs.append(html.B(f"Conductance Calculated C = {C} L/s"))
         C = round(C,4)
+        outputs.append(html.B(f"Final Conductance Calculated C = {C} L/s"))
+        
         filtered_df  = df
         # try:
         #     filtered_df = df[(df["Pumping speed m3/hr "] >= pump_speed*0.9) & (df["Pumping speed m3/hr "] <= (pump_speed*1.1))]
@@ -354,6 +363,9 @@ def calculate_downtimes(n_clicks, input1, input2, input3, table_data,table_data_
             S_eff = round(S_eff,4)
             filtered_df.loc[filtered_df["Pumping speed m3/hr "] == So_org,"Effective Pumping Speed (L/s)"] = round(S_eff,2)
         outputs.append(html.Br())
+        target_S_eff = (volume/tp)*math.log(760/pressure)
+        target_S_eff = round(target_S_eff,4)
+        outputs.append(html.P(f"Effective Speed calculation = ({volume}/{tp}) * log10(({760})/{pressure}) = {target_S_eff}"))
         outputs.append(html.B(f"Effective Speed S_eff = {target_S_eff} L/S"))
         outputs.append(html.Br())
         outputs.append(html.B(f"Effective Speeds Table :"))
