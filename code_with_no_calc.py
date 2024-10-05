@@ -272,14 +272,14 @@ def calculate_downtimes(n_clicks, input1, input2, input3, table_data,table_data_
             pressure = pressure*0.76
         volume = input3
         C = 0
-        mu = 0.0179
+        mu = 0.0001782
         p_ = round((pressure+760)/2,3)
         global table_values
         global table_values_2
         table_values = []
         table_values_2 = []
         PI = 3.14
-        target_S_eff = (volume/tp)*math.log(760/pressure)
+        
         
         for row in table_data:
             table_values.append([row['length'],row['diameter']])
@@ -288,23 +288,36 @@ def calculate_downtimes(n_clicks, input1, input2, input3, table_data,table_data_
             table_values_2.append(row['diameter'])
 
         outputs=[]
+        cs = []
         for l,d in table_values:
             l,d = round(l,4),round(d,4)
             c = 0.0327*(d**4/(mu*l))*p_
+            # outputs.append(html.P(f"Conductance calculated for pipe with length {l}cm and diameter {d} cm = (({0.0327}*{d}^4)/({mu}*{l}))*{p_} = {c} L/s"))
+            
             c = round(c,4)
+            cs.append(c)
             C += 1/(c)
+            # outputs.append(html.P(f"Inverse of Conductance 1/c = {1/c}"))
+            outputs.append(html.Br())
         
-        constant_factor = (PI*1000*p_) / (128*mu*0.1)
+        constant_factor = (PI*1000*133.3*p_) / (128*mu*0.1)
         for d in table_values_2:
             K = k_dict[1] # r==d
             d = round(d,4)
             c = constant_factor*K*((d*0.01)**3)
+            # outputs.append(html.P(f"Conductance calculated for bend with diameter {d}cm = (({PI}*{1000}*{133.3}*{p_})/({128}*{mu}*{0.1}))*{K}*(({d}*{0.01})^3) = {c} L/s"))
+            outputs.append(html.Br())
             c = round(c,4)
+            cs.append(c)
+            # outputs.append(html.P(f"Inverse of Conductance 1/c = {1/c}"))
             C += 1/(c)
-
+        
+        
+        # outputs.append(html.P(f"Inverse Conductance values addition: 1/C = {" + ".join([str(1/c) for c in cs])}"))
         C = 1/C
-        outputs.append(html.B(f"Conductance Calculated C = {C} L/s"))
         C = round(C,4)
+        outputs.append(html.B(f"Final Conductance Calculated C = {C} L/s"))
+        
         filtered_df  = df
         # try:
         #     filtered_df = df[(df["Pumping speed m3/hr "] >= pump_speed*0.9) & (df["Pumping speed m3/hr "] <= (pump_speed*1.1))]
@@ -342,23 +355,29 @@ def calculate_downtimes(n_clicks, input1, input2, input3, table_data,table_data_
         #     outputs.append(html.Div(id='Flow-Rate-Output'))
         
         filtered_df = filtered_df[filtered_df["Ult pressure(mTorr) "] <= pressure]
-        filtered_df["Effective Pumping Speed (L/s)"] = 0.0
-        for So in filtered_df["Pumping speed m3/hr "].unique():
-            So_org = So
-            So = float(So)*0.277778
-            S_eff = (So*C)/(So+C)
-            S_eff = round(S_eff,4)
-            filtered_df.loc[filtered_df["Pumping speed m3/hr "] == So_org,"Effective Pumping Speed (L/s)"] = round(S_eff,2)
+        # filtered_df["Effective Pumping Speed (L/s)"] = 0.0
+        # for So in filtered_df["Pumping speed m3/hr "].unique():
+        #     So_org = So
+        #     So = float(So)*0.277778
+        #     S_eff = (So*C)/(So+C)
+        #     S_eff = round(S_eff,4)
+        #     filtered_df.loc[filtered_df["Pumping speed m3/hr "] == So_org,"Effective Pumping Speed (L/s)"] = round(S_eff,2)
         outputs.append(html.Br())
+        target_S_eff = (volume/tp)*math.log(760/pressure)
+        target_S_eff = round(target_S_eff,4)
+        # outputs.append(html.P(f"Effective Speed calculation = ({volume}/{tp}) * log10(({760})/{pressure}) = {target_S_eff}"))
         outputs.append(html.B(f"Effective Speed S_eff = {target_S_eff} L/S"))
         outputs.append(html.Br())
-        outputs.append(html.B(f"Effective Speeds Table :"))
+        outputs.append(html.B(f"Table :"))
         outputs.append(html.Br())
+        target_S = round((target_S_eff*C)/(C-target_S_eff),4)*3.6
+        # outputs.append(html.P(f"Pumping Speed for Comparision = ({target_S_eff}*{C})/({C}-{target_S_eff}) = {target_S} m3/hr"))
         slider = slider/100 #put a slider
-        filtered_df = filtered_df[(filtered_df["Effective Pumping Speed (L/s)"] >= (1-slider)*target_S_eff) & (filtered_df["Effective Pumping Speed (L/s)"] <= (1+slider)*target_S_eff)]
+        filtered_df = filtered_df[(filtered_df["Pumping speed m3/hr "] >= (1-slider)*target_S) & (filtered_df["Pumping speed m3/hr "] <= (1+slider)*target_S)]
         filtered_df["Pump_DownTimes"] = [calculate_downtimes_pipes(model,pressure,volume) for model in filtered_df["Model Name "]]
         filtered_df = filtered_df.sort_values("Total Equivalent Energy")
-        cols = filtered_df.columns[0:2].to_list() + ["Effective Pumping Speed (L/s)","Pump_DownTimes"] + filtered_df.columns[2:-2].to_list()
+        # cols = filtered_df.columns[0:2].to_list() + ["Pump_DownTimes"] + filtered_df.columns[2:-1].to_list()
+        cols = ["Supplier ","Model Name ","Pumping speed m3/hr ","Ult pressure(mTorr) ","Pump_DownTimes","Total Equivalent Energy","Inlet ","exhaust ","PCWmin lpm","Power at ultimate KW ","Heat Balance","N2 kWh/year","DE KWh/ year ","PCW KWh/year "]
         columns = [{"field":col} for col in cols]
         filtered_df = filtered_df[cols]
         data = filtered_df.to_dict('records')
@@ -433,7 +452,7 @@ def calculate_downtimes_pipes(model_name,target_pressure,volume):
         speeds = new_speeds
         pfs = []
         conductances = []
-        mu = 0.0179
+        mu = 0.0001782
         PI = 3.14
         effective_speeds = []
         pump_down_times = []
@@ -452,7 +471,7 @@ def calculate_downtimes_pipes(model_name,target_pressure,volume):
                 v += round(PI*(d/2)**2*l,4) * 10**(-3)
                 C += 1/(c)
             
-            constant_factor = (PI*1000*p_) / (128*mu*0.1)
+            constant_factor = (PI*1000*133.3*p_) / (128*mu*0.1)
             for d in table_values_2:
                 K = k_dict[1]
                 d = round(d,4)
@@ -520,7 +539,7 @@ def display_selected_row(selected_rows,target_pressure,volume):
             speeds = new_speeds
             pfs = []
             conductances = []
-            mu = 0.0179
+            mu = 0.0001782
             PI = 3.14
             effective_speeds = []
             pump_down_times = []
@@ -529,7 +548,7 @@ def display_selected_row(selected_rows,target_pressure,volume):
             for i in range(n):
                 v=volume
                 So = speeds[i]
-                # outputs.append(html.Br())
+                outputs.append(html.Br())
                 # outputs.append(html.P(f"Calculating with speed : {So}"))
                 
                 p_ = (pressures[i])
@@ -543,7 +562,7 @@ def display_selected_row(selected_rows,target_pressure,volume):
                     C += 1/(c)
                     # outputs.append(html.P(f"Conductance for length {l}, and diameter {d} = {0.0327}*({d}^4/{mu}*{l})*{p_} = {c}"))
                 
-                constant_factor = (PI*1000*p_) / (128*mu*0.1)
+                constant_factor = (PI*1000*133.3*p_) / (128*mu*0.1)
                 # outputs.append(html.P(f"Constant factor in calculation ({PI}*Average_Pressure*1000)/(128*mu*0.1) = {constant_factor}"))
                 for d in table_values_2:
                     K = k_dict[1]
@@ -564,7 +583,9 @@ def display_selected_row(selected_rows,target_pressure,volume):
                     # outputs.append(html.P(f"Pump Down Time t = ({v}/{S_eff})*log({pressures[i]}/{pressures[i+1]}) = {time}"))
                     pump_down_times.append(time)
                 else:
-                    pump_down_times.append(round(((v/S_eff)*math.log(pressures[i]/target_pressure)),4))
+                    time = round(((v/S_eff)*math.log(pressures[i]/target_pressure)),4)
+                    pump_down_times.append(time)
+                    # outputs.append(html.P(f"Pump Down Time t = ({v}/{S_eff})*log({pressures[i]}/{target_pressure}) = {time}"))
                 pf = (S_eff/(C+S_eff))*760
                 pfs.append(pf)
                 Q.append(pressures[i]*S_eff)
@@ -600,7 +621,7 @@ def display_selected_row(selected_rows,target_pressure,volume):
             
         fig['layout'].update(height=600,
                                 width=800,
-                                title='Performance Curve',
+                                title='Pump Down Curve',
                                 )
         fig.update_yaxes(title_text="Pressure Torr")
         fig.update_xaxes(title_text="Pump Down Times")
