@@ -548,7 +548,7 @@ def display_selected_row(selected_rows,target_pressure,volume):
             for i in range(n):
                 v=volume
                 So = speeds[i]
-                outputs.append(html.Br())
+                # outputs.append(html.Br())
                 # outputs.append(html.P(f"Calculating with speed : {So}"))
                 
                 p_ = (pressures[i])
@@ -613,8 +613,8 @@ def display_selected_row(selected_rows,target_pressure,volume):
             # outputs.append(html.Div(id="individual-pressures-div", children=[grid],style={"padding":"10px"}))
             
             # outputs.append(html.Br())
-            outputs.append(html.B(f"Total Pump Down Time t = {round(sum(pump_down_times),4)} s"))
-            outputs.append(html.Br())
+            # outputs.append(html.B(f"Total Pump Down Time t = {round(sum(pump_down_times),4)} s"))
+            # outputs.append(html.Br())
         
         fig = make_subplots(specs=[[{"secondary_y": False}]]) # Canvas for plots
         fig.add_trace(go.Scatter(y=pressures[1:-1], x=pump_down_times,name="Time vs Pressure"))
@@ -627,10 +627,11 @@ def display_selected_row(selected_rows,target_pressure,volume):
         fig.update_xaxes(title_text="Pump Down Times")
 
         outputs.extend([
-        html.Br(),
+        # html.Br(),
         dcc.Graph(figure=fig),
-        html.Br(),
-        html.Br()])
+        # html.Br(),
+        # html.Br()
+        ])
         return html.Div(outputs)
     else:
         return html.P(html.B('Select any row to display Models and Graphs'))
