@@ -298,7 +298,7 @@ def calculate_downtimes(n_clicks, input1, input2, input3, table_data,table_data_
             cs.append(c)
             C += 1/(c)
             # outputs.append(html.P(f"Inverse of Conductance 1/c = {1/c}"))
-            outputs.append(html.Br())
+            # outputs.append(html.Br())
         
         constant_factor = (PI*1000*133.3*p_) / (128*mu*0.1)
         for d in table_values_2:
@@ -306,7 +306,7 @@ def calculate_downtimes(n_clicks, input1, input2, input3, table_data,table_data_
             d = round(d,4)
             c = constant_factor*K*((d*0.01)**3)
             # outputs.append(html.P(f"Conductance calculated for bend with diameter {d}cm = (({PI}*{1000}*{133.3}*{p_})/({128}*{mu}*{0.1}))*{K}*(({d}*{0.01})^3) = {c} L/s"))
-            outputs.append(html.Br())
+            # outputs.append(html.Br())
             c = round(c,4)
             cs.append(c)
             # outputs.append(html.P(f"Inverse of Conductance 1/c = {1/c}"))
@@ -316,7 +316,7 @@ def calculate_downtimes(n_clicks, input1, input2, input3, table_data,table_data_
         # outputs.append(html.P(f"Inverse Conductance values addition: 1/C = {" + ".join([str(1/c) for c in cs])}"))
         C = 1/C
         C = round(C,4)
-        outputs.append(html.B(f"Final Conductance Calculated C = {C} L/s"))
+        # outputs.append(html.B(f"Final Conductance Calculated C = {C} L/s"))
         
         filtered_df  = df
         # try:
@@ -366,7 +366,7 @@ def calculate_downtimes(n_clicks, input1, input2, input3, table_data,table_data_
         target_S_eff = (volume/tp)*math.log(760/pressure)
         target_S_eff = round(target_S_eff,4)
         # outputs.append(html.P(f"Effective Speed calculation = ({volume}/{tp}) * log10(({760})/{pressure}) = {target_S_eff}"))
-        outputs.append(html.B(f"Effective Speed S_eff = {target_S_eff} L/S"))
+        # outputs.append(html.B(f"Effective Speed S_eff = {target_S_eff} L/S"))
         outputs.append(html.Br())
         outputs.append(html.B(f"Table :"))
         outputs.append(html.Br())
@@ -597,23 +597,23 @@ def display_selected_row(selected_rows,target_pressure,volume):
             pressures = list(map(lambda x:round(x,2), pressures))
             Q = list(map(lambda x:round(x,2), Q))
             pfs = list(map(lambda x:round(x,2), pfs))
-            another_table = pd.DataFrame({"Pressure (Torr)":pressures,"Pumping speed L/s ":speeds,"Conductance L/s":conductances,"Effective Speed L/s":effective_speeds,"Pump Down Time (s)":pump_down_times})
-            columns = [{'headerName': i, 'field': i} for i in another_table.columns]
-            data = another_table.to_dict('records')
-            grid = dag.AgGrid(
-                id='flow-rate-div',
-                columnDefs=columns,
-                rowData=data,
-                columnSize="sizeToFit",
-                defaultColDef={"resizable": True, "sortable": True, "filter": True, "minWidth": 100},
-                dashGridOptions={"pagination": True, "paginationPageSize": 8, "domLayout": "autoHeight",'rowSelection': "single"},
-                style={"height": 500, "width": "100%"},
-                className="ag-theme-alpine"
-            )
-            outputs.append(html.Div(id="individual-pressures-div", children=[grid],style={"padding":"10px"}))
+            # another_table = pd.DataFrame({"Pressure (Torr)":pressures,"Pumping speed L/s ":speeds,"Conductance L/s":conductances,"Effective Speed L/s":effective_speeds,"Pump Down Time (s)":pump_down_times})
+            # columns = [{'headerName': i, 'field': i} for i in another_table.columns]
+            # data = another_table.to_dict('records')
+            # grid = dag.AgGrid(
+            #     id='flow-rate-div',
+            #     columnDefs=columns,
+            #     rowData=data,
+            #     columnSize="sizeToFit",
+            #     defaultColDef={"resizable": True, "sortable": True, "filter": True, "minWidth": 100},
+            #     dashGridOptions={"pagination": True, "paginationPageSize": 8, "domLayout": "autoHeight",'rowSelection': "single"},
+            #     style={"height": 500, "width": "100%"},
+            #     className="ag-theme-alpine"
+            # )
+            # outputs.append(html.Div(id="individual-pressures-div", children=[grid],style={"padding":"10px"}))
             
-            outputs.append(html.Br())
-            outputs.append(html.B(f"Total Pump Down Time t = {sum(pump_down_times)} s"))
+            # outputs.append(html.Br())
+            outputs.append(html.B(f"Total Pump Down Time t = {round(sum(pump_down_times),4)} s"))
             outputs.append(html.Br())
         
         fig = make_subplots(specs=[[{"secondary_y": False}]]) # Canvas for plots
