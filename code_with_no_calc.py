@@ -375,7 +375,7 @@ def calculate_downtimes(n_clicks, input1, input2, input3, table_data,table_data_
         slider = slider/100 #put a slider
         filtered_df = filtered_df[(filtered_df["Pumping speed m3/hr "] >= (1-slider)*target_S) & (filtered_df["Pumping speed m3/hr "] <= (1+slider)*target_S)]
         # filtered_df[filtered_df.describe().columns] = filtered_df[filtered_df.describe().columns].apply(pd.to_numeric,errors='ignore')
-        filtered_df[['Total Equivalent Energy','Heat Balance','N2 kWh/year',"DE KWh/ year ",'PCW KWh/year ']] = filtered_df[['Total Equivalent Energy','Heat Balance','N2 kWh/year',"DE KWh/ year ",'PCW KWh/year ']].astype(int)
+        filtered_df[['Total Equivalent Energy','Heat Balance','N2 kWh/year',"DE KWh/ year ",'PCW KWh/year ']] = filtered_df[['Total Equivalent Energy','Heat Balance','N2 kWh/year',"DE KWh/ year ",'PCW KWh/year ']].apply(lambda x: int(x) if not pd.isna(x) else np.nan)
         filtered_df["Pump_DownTimes"] = [calculate_downtimes_pipes(model,pressure,volume) for model in filtered_df["Model Name "]]
         filtered_df = filtered_df.sort_values("Total Equivalent Energy")
         # cols = filtered_df.columns[0:2].to_list() + ["Pump_DownTimes"] + filtered_df.columns[2:-1].to_list()
@@ -688,4 +688,3 @@ def display_selected_row_2(selected_rows,pressure):
 # Run the app
 if __name__ == '__main__':
     app.run(host='127.0.0.1',port='8050',debug=True)
-  
