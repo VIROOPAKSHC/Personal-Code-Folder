@@ -374,9 +374,12 @@ def calculate_downtimes(n_clicks, input1, input2, input3, table_data,table_data_
         # outputs.append(html.P(f"Pumping Speed for Comparision = ({target_S_eff}*{C})/({C}-{target_S_eff}) = {target_S} m3/hr"))
         slider = slider/100 #put a slider
         filtered_df = filtered_df[(filtered_df["Pumping speed m3/hr "] >= (1-slider)*target_S) & (filtered_df["Pumping speed m3/hr "] <= (1+slider)*target_S)]
+        # filtered_df[filtered_df.describe().columns] = filtered_df[filtered_df.describe().columns].apply(pd.to_numeric,errors='ignore')
+        filtered_df[['Total Equivalent Energy','Heat Balance','N2 kWh/year',"DE KWh/ year ",'PCW KWh/year ']] = filtered_df[['Total Equivalent Energy','Heat Balance','N2 kWh/year',"DE KWh/ year ",'PCW KWh/year ']].astype(int)
         filtered_df["Pump_DownTimes"] = [calculate_downtimes_pipes(model,pressure,volume) for model in filtered_df["Model Name "]]
         filtered_df = filtered_df.sort_values("Total Equivalent Energy")
         # cols = filtered_df.columns[0:2].to_list() + ["Pump_DownTimes"] + filtered_df.columns[2:-1].to_list()
+        print(target_S,df['Pumping speed m3/hr '].values)
         cols = ["Supplier ","Model Name ","Pumping speed m3/hr ","Ult pressure(mTorr) ","Pump_DownTimes","Total Equivalent Energy","Inlet ","exhaust ","PCWmin lpm","Power at ultimate KW ","Heat Balance","N2 kWh/year","DE KWh/ year ","PCW KWh/year "]
         columns = [{"field":col} for col in cols]
         filtered_df = filtered_df[cols]
@@ -616,22 +619,22 @@ def display_selected_row(selected_rows,target_pressure,volume):
             # outputs.append(html.B(f"Total Pump Down Time t = {round(sum(pump_down_times),4)} s"))
             # outputs.append(html.Br())
         
-        fig = make_subplots(specs=[[{"secondary_y": False}]]) # Canvas for plots
-        fig.add_trace(go.Scatter(y=pressures[1:-1], x=pump_down_times,name="Time vs Pressure"))
-            
-        fig['layout'].update(height=600,
-                                width=800,
-                                title='Pump Down Curve',
-                                )
-        fig.update_yaxes(title_text="Pressure Torr")
-        fig.update_xaxes(title_text="Pump Down Times")
+            fig = make_subplots(specs=[[{"secondary_y": False}]]) # Canvas for plots
+            fig.add_trace(go.Scatter(y=pressures[1:-1], x=pump_down_times,name="Time vs Pressure"))
+                
+            fig['layout'].update(height=600,
+                                    width=800,
+                                    title='Pump Down Curve',
+                                    )
+            fig.update_yaxes(title_text="Pressure Torr")
+            fig.update_xaxes(title_text="Pump Down Times")
 
-        outputs.extend([
-        # html.Br(),
-        dcc.Graph(figure=fig),
-        # html.Br(),
-        # html.Br()
-        ])
+            outputs.extend([
+            # html.Br(),
+            dcc.Graph(figure=fig),
+            # html.Br(),
+            # html.Br()
+            ])
         return html.Div(outputs)
     else:
         return html.P(html.B('Select any row to display Models and Graphs'))
@@ -685,3 +688,4 @@ def display_selected_row_2(selected_rows,pressure):
 # Run the app
 if __name__ == '__main__':
     app.run(host='127.0.0.1',port='8050',debug=True)
+  
