@@ -362,11 +362,17 @@ def calculate_downtimes(n_clicks, input1, input2, input3, table_data,table_data_
         #     S_eff = (So*C)/(So+C)
         #     S_eff = round(S_eff,4)
         #     filtered_df.loc[filtered_df["Pumping speed m3/hr "] == So_org,"Effective Pumping Speed (L/s)"] = round(S_eff,2)
-        outputs.append(html.Br())
+        # outputs.append(html.Br())
         target_S_eff = (volume/tp)*math.log(760/pressure)
         target_S_eff = round(target_S_eff,4)
         # outputs.append(html.P(f"Effective Speed calculation = ({volume}/{tp}) * log10(({760})/{pressure}) = {target_S_eff}"))
         # outputs.append(html.B(f"Effective Speed S_eff = {target_S_eff} L/S"))
+        outputs.append(html.Div([
+                # dcc.Markdown("Click here to take a look at the entire database",style={"width":"200px"}),
+                dbc.Button("View Database", id="database-button", color="info",style={"width":"150"},n_clicks=0),
+                html.Br(),
+                html.Div(id='Database-Output')]
+            ))
         outputs.append(html.Br())
         outputs.append(html.B(f"Table :"))
         outputs.append(html.Br())
@@ -374,8 +380,7 @@ def calculate_downtimes(n_clicks, input1, input2, input3, table_data,table_data_
         # outputs.append(html.P(f"Pumping Speed for Comparision = ({target_S_eff}*{C})/({C}-{target_S_eff}) = {target_S} m3/hr"))
         slider = slider/100 #put a slider
         filtered_df = filtered_df[(filtered_df["Pumping speed m3/hr "] >= (1-slider)*target_S) & (filtered_df["Pumping speed m3/hr "] <= (1+slider)*target_S)]
-        # filtered_df[filtered_df.describe().columns] = filtered_df[filtered_df.describe().columns].apply(pd.to_numeric,errors='ignore')
-        filtered_df[['Total Equivalent Energy','Heat Balance','N2 kWh/year',"DE KWh/ year ",'PCW KWh/year ']] = filtered_df[['Total Equivalent Energy','Heat Balance','N2 kWh/year',"DE KWh/ year ",'PCW KWh/year ']].apply(lambda x: int(x) if not pd.isna(x) else np.nan)
+        filtered_df[['Total Equivalent Energy','Heat Balance','N2 kWh/year',"DE KWh/ year ",'PCW KWh/year ']] = filtered_df[['Total Equivalent Energy','Heat Balance','N2 kWh/year',"DE KWh/ year ",'PCW KWh/year ']].astype(int)
         filtered_df["Pump_DownTimes"] = [calculate_downtimes_pipes(model,pressure,volume) for model in filtered_df["Model Name "]]
         filtered_df = filtered_df.sort_values("Total Equivalent Energy")
         # cols = filtered_df.columns[0:2].to_list() + ["Pump_DownTimes"] + filtered_df.columns[2:-1].to_list()
@@ -411,6 +416,36 @@ def calculate_downtimes(n_clicks, input1, input2, input3, table_data,table_data_
         outputs.append(html.Div(id="Pumping-Speed-Output"))
         return outputs
 
+    else:
+        return dash.no_update
+
+
+@app.callback(
+        Output('Database-Output','children'),
+        Input('database-button','n_clicks')
+)
+def database_View(n_clicks):
+    if n_clicks:
+        cols = df.columns
+        columns = [{"field":col} for col in cols]
+        data = df.to_dict('records')
+        grid = dag.AgGrid(
+            id='entire-table-div',
+            columnDefs=columns,
+            rowData=data,
+            columnSize="sizeToFit",
+            defaultColDef={"resizable": True, "sortable": True, "filter": True, "minWidth": 100},
+            style={"height": 500, "width": "100%"},
+            dashGridOptions={
+                        "pagination": True,
+                        "paginationPageSize": 8,
+                        "domLayout": "autoHeight",
+                        'rowSelection': "single",
+                    },
+            className="ag-theme-alpine"
+        )
+        
+        return [html.Div(id="entire-table-div", children=[grid],style={"padding":"10px"})]
     else:
         return dash.no_update
 
