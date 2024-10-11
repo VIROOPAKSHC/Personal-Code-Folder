@@ -317,7 +317,7 @@ def calculate_downtimes(n_clicks, input1, input2, input3, table_data,table_data_
         C = 1/C
         C = round(C,4)
         # outputs.append(html.B(f"Final Conductance Calculated C = {C} L/s"))
-        
+        global filtered_df
         filtered_df  = df
         # try:
         #     filtered_df = df[(df["Pumping speed m3/hr "] >= pump_speed*0.9) & (df["Pumping speed m3/hr "] <= (pump_speed*1.1))]
@@ -426,9 +426,9 @@ def calculate_downtimes(n_clicks, input1, input2, input3, table_data,table_data_
 )
 def database_View(n_clicks):
     if n_clicks:
-        cols = df.columns
+        cols = filtered_df.columns
         columns = [{"field":col} for col in cols]
-        data = df.to_dict('records')
+        data = filtered_df.to_dict('records')
         grid = dag.AgGrid(
             id='entire-table-div',
             columnDefs=columns,
