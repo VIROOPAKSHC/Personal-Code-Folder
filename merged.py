@@ -507,7 +507,8 @@ def calculate_downtimes(n_clicks, input1, input2, input3, table_data,table_data_
 )
 def database_View(n_clicks,pressure,volume):
     if n_clicks:
-        pump_find_df["Pump_DownTimes"] = [round(calculate_downtimes_pipes(model,pressure,volume),4) for model in pump_find_df["Model Name "]]
+        lst = [(calculate_downtimes_pipes(model,pressure,volume)) for model in pump_find_df["Model Name "]]
+        pump_find_df["Pump_DownTimes"] = [round(val,4) if val else 0 for val in lst]
         
         cols = ["Supplier ","Model Name ","Pumping speed m3/hr ","Ult pressure(mTorr) ","Pump_DownTimes","Total Equivalent Energy","Inlet ","exhaust ","PCWmin lpm","Power at ultimate KW ","Heat Balance","N2 kWh/year","DE KWh/ year ","PCW KWh/year "]
         columns = [{"field":col} for col in cols]
