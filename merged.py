@@ -18,17 +18,9 @@ from itertools import islice
 import dash_ag_grid as dag
 import plotly.express as px
 
-file_location = r"C:\Users\ADMIN\OneDrive\Desktop\PUMPMODELS.xlsx" #r"..\..\..\..\Downloads\PUMPMODELS2.xlsx"
-wb = openpyxl.load_workbook(file_location)
-sheet = wb.worksheets[0] 
-data = sheet.values
-cols = next(data)[0:]
-data = list(data)
-data = (islice(r, 0, None) for r in data)
-pump_calc_df = pd.DataFrame(data, columns=cols) 
+pump_calc_df = pd.read_excel("PumpModels4.1.xlsx")
 model_dropdown = [{'label': model, 'value': model} for model in set(pump_calc_df["Model Name "])]
 pump_find_df = pd.read_excel("PumpModels4.1.xlsx")
-
 app = dash.Dash(__name__,external_stylesheets=[dbc.themes.UNITED, dbc.icons.BOOTSTRAP],suppress_callback_exceptions=True)
 k_dict = {0:0.017,1:0.05,2:0.083,4:0.073,6:0.056,8:0.042,10:0.034,12:0.029,14:0.026}
 
@@ -1042,7 +1034,7 @@ def update_selected_values(selected_values):
         # Setting up a dataframe from the excel sheet 
         # that contains the model name corresponding to
         # the location of the text file for the data points.
-        file_location = r"C:\Users\ADMIN\OneDrive\Desktop\plotsdata.xlsx" #r"..\..\..\..\Downloads\pumpModels_plotsdata.xlsx"
+        file_location = r"..\..\..\..\Downloads\pumpModels_plotsdata.xlsx"
         wb = openpyxl.load_workbook(file_location)
         sheet = wb.worksheets[0] #[1]
         data = sheet.values
