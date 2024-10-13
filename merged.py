@@ -242,8 +242,9 @@ def update_radio(value):
             html.Div(id='output-container-2',style={"padding":"10px"})
         ])]
 
-##########################################################################################################
-###########################################################################################################
+###############################################################################################################################################################################################################
+################################################################################################################################################################################################################
+
 
 # Pump Finder functions
 
@@ -514,7 +515,7 @@ def calculate_downtimes(n_clicks, input1, input2, input3, table_data,table_data_
 )
 def database_View(n_clicks,pressure,volume):
     if n_clicks:
-        pump_find_df["Pump_DownTimes"] = [calculate_downtimes_pipes(model,pressure,volume) for model in pump_find_df["Model Name "]]
+        pump_find_df["Pump_DownTimes"] = [round(calculate_downtimes_pipes(model,pressure,volume),4) for model in pump_find_df["Model Name "]]
         
         cols = ["Supplier ","Model Name ","Pumping speed m3/hr ","Ult pressure(mTorr) ","Pump_DownTimes","Total Equivalent Energy","Inlet ","exhaust ","PCWmin lpm","Power at ultimate KW ","Heat Balance","N2 kWh/year","DE KWh/ year ","PCW KWh/year "]
         columns = [{"field":col} for col in cols]
@@ -811,12 +812,13 @@ def display_selected_row_2(selected_rows,pressure):
         return [html.P(html.B('Select any row to display Models and Graphs'))]
 
 
-#####################################################################################################
-#####################################################################################################
+##########################################################################################################################################################################################################
+##########################################################################################################################################################################################################
 
 
-#####################################################################################################
-#####################################################################################################
+##########################################################################################################################################################################################################
+##########################################################################################################################################################################################################
+
 
 # Pump Calculator Functions
 
@@ -883,7 +885,7 @@ def update_output(n_clicks, values):
     """
     global default_graph_models, find_a_pump
     default_graph_models = []
-    column1 = 'Pmping speed m3/hr '
+    column1 = 'Pumping speed m3/hr '
 
     column2 = 'Ult pressure(mTorr) '
     if n_clicks and all(values):
@@ -892,9 +894,9 @@ def update_output(n_clicks, values):
             value2 = float(values[1])
         elif len(values)==1:
             model = values[0]
-            zeroed_df = pump_calc_df[(pump_calc_df[["Green Star Rating ", "N2 slm", "PCW typ lpm"]]==0).any(axis=1)]
+            zeroed_df = pump_calc_df[(pump_calc_df[["Total Equivalent Energy", "N2 slm", "PCW typ lpm"]]==0).any(axis=1)]
             row = pump_calc_df[pump_calc_df["Model Name "] == model].iloc[0]
-            value1 = row['Pmping speed m3/hr ']
+            value1 = row['Pumping speed m3/hr ']
             value2 = row['Ult pressure(mTorr) ']
 
         pump_calc_df[column1].astype(float)
@@ -918,13 +920,13 @@ def update_output(n_clicks, values):
         else:
 
             filtered_df[[
-                "N2 kWh/year", "DE KWh/ year ", "PCW KWh/year ", "Green Star Rating "
+                "N2 kWh/year", "DE KWh/ year ", "PCW KWh/year ", "Total Equivalent Energy"
             ]] = filtered_df[[
-                "N2 kWh/year", "DE KWh/ year ", "PCW KWh/year ", "Green Star Rating "
+                "N2 kWh/year", "DE KWh/ year ", "PCW KWh/year ", "Total Equivalent Energy"
             ]].astype(int) 
             # Converting the columns to integer type and rounding to 2 decimal places.
             filtered_df.round(2)
-            filtered_df[["Green Star Rating "]].round(0)
+            filtered_df[["Total Equivalent Energy"]].round(0)
         #   print("COLUMNS",filtered_df.columns)
             dropdown_options = [{
                 "label": model,
@@ -933,11 +935,11 @@ def update_output(n_clicks, values):
 
             filtered_df["S.No"] = 1
             # print("COLUMNS AGAIN \n",filtered_df.columns)
-            filtered_df = filtered_df[["S.No","Supplier ","Model Name ","Pmping speed m3/hr ",'Ult pressure(mTorr) ',"Category", "Green Star Rating ","N2 slm","Inlet ","exhaust ","PCW typ lpm","Power at ultimate KW ", "N2 kWh/year", "DE KWh/ year ", "PCW KWh/year ","Max power kVA"]]
+            filtered_df = filtered_df[["S.No","Supplier ","Model Name ","Pumping speed m3/hr ",'Ult pressure(mTorr) ',"Category", "Total Equivalent Energy","N2 slm","Inlet ","exhaust ","PCW typ lpm","Power at ultimate KW ", "N2 kWh/year", "DE KWh/ year ", "PCW KWh/year ","Max power kVA"]]
             filtered_df.fillna(0)
-            zero_rows = filtered_df[filtered_df["Green Star Rating "]==0]
-            filtered_df.drop(filtered_df[filtered_df["Green Star Rating "]==0].index,axis=0,inplace=True)
-            filtered_df = filtered_df.sort_values('Green Star Rating ') # Ordering based on the Green Star Rating in the increasing order.
+            zero_rows = filtered_df[filtered_df["Total Equivalent Energy"]==0]
+            filtered_df.drop(filtered_df[filtered_df["Total Equivalent Energy"]==0].index,axis=0,inplace=True)
+            filtered_df = filtered_df.sort_values('Total Equivalent Energy') # Ordering based on the Total Equivalent Energyin the increasing order.
             filtered_df = pd.concat([filtered_df,zero_rows],axis=0)
             filtered_df[filtered_df==0] = "N/A"
             filtered_df[list(filtered_df.columns[:])] = filtered_df[list(filtered_df.columns[:])].astype(str)
@@ -1063,16 +1065,16 @@ def update_selected_values(selected_values):
         fig = make_subplots(specs=[[{"secondary_y": False}]]) # Canvas for plots
         for model in data_df.loc[indices]['file location ']:
             data = extract_points(model)
-            print(data)
+            # print(data)
             if not (ranges and data[2]):
                 ranges.extend(data[2])
-                print("HI")
+                # print("HI")
             else:
                 ranges[0] = min(ranges[0],data[2][0])
                 ranges[1] = max(ranges[1],data[2][1])
             fig.add_trace(go.Scatter(x=data[0], y=data[1], name=selected_values[0]))
             selected_values.pop(0)
-            print(ranges)
+            # print(ranges)
         fig['layout'].update(height=600,
                             width=800,
                             title='Performance Curve',
