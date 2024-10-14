@@ -21,6 +21,7 @@ import plotly.express as px
 pump_calc_df = pd.read_excel("PumpModels4.1.xlsx")
 model_dropdown = [{'label': model, 'value': model} for model in set(pump_calc_df["Model Name "])]
 pump_find_df = pd.read_excel("PumpModels4.1.xlsx")
+
 app = dash.Dash(__name__,external_stylesheets=[dbc.themes.UNITED, dbc.icons.BOOTSTRAP],suppress_callback_exceptions=True)
 k_dict = {0:0.017,1:0.05,2:0.083,4:0.073,6:0.056,8:0.042,10:0.034,12:0.029,14:0.026}
 
@@ -75,19 +76,23 @@ def update_radio(value):
        default_graph_models = []
        find_a_pump = 0
        return [html.Div([html.Div([
-                            dbc.InputGroup(
+           html.Br(),
+                            html.Div(
                                 children=[
                                     html.Div(children=[
-                                        html.P("Pumping speed m3/h"),
+                                        dcc.Markdown("** Pumping speed m3/h **",style={"width":"200px"}),
                                         dcc.Input(
                                           id = {'type':'user-input','index':2},
-                                          value=''),
-                                        html.P("Ultimate pressure in mTorr"),
+                                          value='',style={"margin-left":"50px"}),
+                                    ],style={"display":"flex"}),
+                                    html.Br(),
+                                    html.Div([dcc.Markdown("** Ultimate Pressure in mTorr **",style={"width":"200px"}),
                                         dcc.Input(
                                           id = {'type':'user-input','index':3},
-                                          value=''),
-                                    ], style={"padding": "10px"})
-                                ],style={"backgroundColor":"dark gray"}
+                                          value='',style={"margin-left":"50px"}),
+                                    ], style={"display":"flex"})
+                                    ]
+                                ,style={"backgroundColor":"dark gray"}
                             )
                         ]),
               html.Div([
@@ -108,16 +113,17 @@ def update_radio(value):
        default_graph_models = []
        find_a_pump = 1
        return [html.Div([html.Div([
+                    html.Br(),
                       html.Div(children=[
-                          html.P("Alternative - Model Name"),
+                          dcc.Markdown("** Find a Green Alternative Pump **",style={"width":"200px"}),
                           dcc.Dropdown(
                               id = {'type':'user-input','index':1},
                               options=[{'label': model, 'value': model} for model in set(pump_calc_df["Model Name "]) if model],
                               multi=False,
                               value=[],
                               clearable=True,
-                              style={"width": "250px"},
-                          )], style={"padding": "10px"}
+                              style={"width": "250px","margin-left":"50px"},
+                          )],style={"display":"flex"}
                       ),
                       html.Div(html.Button(id="submit-button", children="Submit", n_clicks=0),
                                      style={"padding": "10px"}),
@@ -133,8 +139,7 @@ def update_radio(value):
               ], style={"align-items":"center","margin":"10px"})]
       )]
     else:
-       find_a_pump=2
-       return [html.Div([html.Div([dcc.Markdown("** Enter the target Pressure **",style={"width":"200px"}),
+       return [html.Div([html.Br(),html.Div([dcc.Markdown("** Enter the target Pressure **",style={"width":"200px"}),
             dcc.Input(id='input-2', type='number', placeholder='Target Pressure',style={"margin-left":"50px","width":"200px"}),
             dcc.Dropdown(id='Pressure-Units',placeholder="Units",options=["Torr","mTorr","Bar","mBar"],style={"width":"200px"}),],style={'display': 'flex'}),
             
@@ -469,12 +474,11 @@ def calculate_downtimes(n_clicks, input1, input2, input3, table_data,table_data_
         filtered_df = filtered_df[cols]
         data = filtered_df.to_dict('records')
         grid = dag.AgGrid(
-            id='table-div',
             columnDefs=columns,
             rowData=data,
             columnSize="sizeToFit",
             defaultColDef={"resizable": True, "sortable": True, "filter": True, "minWidth": 100},
-            style={"height": 500, "width": "100%"},
+            style={"height": None, "width": "100%"},
             dashGridOptions={
                         "pagination": True,
                         "paginationPageSize": 8,
@@ -491,7 +495,11 @@ def calculate_downtimes(n_clicks, input1, input2, input3, table_data,table_data_
                     },
             className="ag-theme-alpine"
         )
-        outputs.append(html.Div(id="table-div", children=[grid],style={"padding":"10px"}))
+        outputs.append(html.Div(id="table-div", children=[grid]))
+        if filtered_df.empty or filtered_df["Pump_DownTimes"].iloc[0]!=tp:
+            outputs.append(html.B("Note: If the pump down time provided in the input does not align with the values in the table, you may need to adjust the foreline dimensions to achieve a closer match. Changing the foreline dimensions will affect the overall system, which can help bring the calculated pump down time closer to your desired value.",style={"text-align":"center",'font-size':'15px'}))
+        outputs.append(html.Br())
+        outputs.append(html.Br())
         outputs.append(html.Div(id="Pumping-Speed-Output"))
         return outputs
 
@@ -887,7 +895,7 @@ def update_output(n_clicks, values):
             value2 = float(values[1])
         elif len(values)==1:
             model = values[0]
-            zeroed_df = pump_calc_df[(pump_calc_df[["Total Equivalent Energy", "N2 slm", "PCW typ lpm"]]==0).any(axis=1)]
+            # zeroed_df = pump_calc_df[(pump_calc_df[["Total Equivalent Energy", "N2 slm", "PCW typ lpm"]]==0).any(axis=1)]
             row = pump_calc_df[pump_calc_df["Model Name "] == model].iloc[0]
             value1 = row['Pumping speed m3/hr ']
             value2 = row['Ult pressure(mTorr) ']
@@ -928,7 +936,7 @@ def update_output(n_clicks, values):
 
             filtered_df["S.No"] = 1
             # print("COLUMNS AGAIN \n",filtered_df.columns)
-            filtered_df = filtered_df[["S.No","Supplier ","Model Name ","Pumping speed m3/hr ",'Ult pressure(mTorr) ',"Category", "Total Equivalent Energy","N2 slm","Inlet ","exhaust ","PCW typ lpm","Power at ultimate KW ", "N2 kWh/year", "DE KWh/ year ", "PCW KWh/year ","Max power kVA"]]
+            filtered_df = filtered_df[["Supplier ","Model Name ","Pumping speed m3/hr ","Ult pressure(mTorr) ","Total Equivalent Energy","Inlet ","exhaust ","PCWmin lpm","Power at ultimate KW ","Heat Balance","N2 kWh/year","DE KWh/ year ","PCW KWh/year "]]
             filtered_df.fillna(0)
             zero_rows = filtered_df[filtered_df["Total Equivalent Energy"]==0]
             filtered_df.drop(filtered_df[filtered_df["Total Equivalent Energy"]==0].index,axis=0,inplace=True)
@@ -936,7 +944,7 @@ def update_output(n_clicks, values):
             filtered_df = pd.concat([filtered_df,zero_rows],axis=0)
             filtered_df[filtered_df==0] = "N/A"
             filtered_df[list(filtered_df.columns[:])] = filtered_df[list(filtered_df.columns[:])].astype(str)
-            
+            filtered_df = filtered_df[["Supplier ","Model Name ","Pumping speed m3/hr ","Ult pressure(mTorr) ","Total Equivalent Energy","Inlet ","exhaust ","PCWmin lpm","Power at ultimate KW ","Heat Balance","N2 kWh/year","DE KWh/ year ","PCW KWh/year "]]
             # print(filtered_df[["Max power kVA"]])
             # Style Conditions to get the first row green
             styleConditions = {
