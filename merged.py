@@ -984,6 +984,7 @@ def update_output(n_clicks, values):
                 default_graph_models.extend(list(filtered_df["Model Name "].iloc[:2].values))
             if not default_graph_models:
                 default_graph_models.append(filtered_df["Model Name "].iloc[:2].values[0])
+			filtered_df[['Total Equivalent Energy','Heat Balance','N2 kWh/year',"DE KWh/ year ",'PCW KWh/year ']] = filtered_df[['Total Equivalent Energy','Heat Balance','N2 kWh/year',"DE KWh/ year ",'PCW KWh/year ']].astype(int)
             return [[
             # AgGrid for the table with styling for the first row as green.
                 dag.AgGrid(id='table-div',defaultColDef={ "filter": True},
