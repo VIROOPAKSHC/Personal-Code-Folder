@@ -26,6 +26,7 @@ app = dash.Dash(__name__,external_stylesheets=[dbc.themes.UNITED, dbc.icons.BOOT
 k_dict = {0:0.017,1:0.05,2:0.083,4:0.073,6:0.056,8:0.042,10:0.034,12:0.029,14:0.026}
 
 def description_card():
+	
   return html.Div(
       id="description-card",
       children=[
@@ -520,8 +521,9 @@ def database_View(n_clicks,pressure,volume):
         
         cols = ["Supplier ","Model Name ","Pumping speed m3/hr ","Ult pressure(mTorr) ","Pump_DownTimes","Total Equivalent Energy","Inlet ","exhaust ","PCWmin lpm","Power at ultimate KW ","Heat Balance","N2 kWh/year","DE KWh/ year ","PCW KWh/year "]
         columns = [{"field":col} for col in cols]
+			
         data = pump_find_df.to_dict('records')
-        
+        pump_find_df.round(2)
         grid = dag.AgGrid(
             id='entire-table-div',
             columnDefs=columns,
