@@ -519,9 +519,9 @@ def database_View(n_clicks,pressure,volume):
         lst = [(calculate_downtimes_pipes(model,pressure,volume)) for model in pump_find_df["Model Name "]]
         pump_find_df["Pump_DownTimes"] = [round(val,4) if val else 0 for val in lst]
         
-        cols = ["Supplier ","Model Name ","Pumping speed m3/hr ","Ult pressure(mTorr) ","Pump_DownTimes","Total Equivalent Energy","Inlet ","exhaust ","PCWmin lpm","Power at ultimate KW ","Heat Balance","N2 kWh/year","DE KWh/ year ","PCW KWh/year "]
+        cols = ["Model Name ","Pumping speed m3/hr ","Ult pressure(mTorr) ","Pump_DownTimes","Total Equivalent Energy","Inlet ","exhaust ","PCWmin lpm","Power at ultimate KW ","Heat Balance","N2 kWh/year","DE KWh/ year ","PCW KWh/year "]
         columns = [{"field":col} for col in cols]
-			
+        pump_find_df[["Total Equivalent Energy","PCWmin lpm","Power at ultimate KW ","Heat Balance","N2 kWh/year","DE KWh/ year ","PCW KWh/year "]]=pump_find_df[["Total Equivalent Energy","PCWmin lpm","Power at ultimate KW ","Heat Balance","N2 kWh/year","DE KWh/ year ","PCW KWh/year "]].astype(int)
         data = pump_find_df.to_dict('records')
         pump_find_df.round(2)
         grid = dag.AgGrid(
@@ -938,7 +938,7 @@ def update_output(n_clicks, values):
 
             filtered_df["S.No"] = 1
             # print("COLUMNS AGAIN \n",filtered_df.columns)
-            filtered_df = filtered_df[["Supplier ","Model Name ","Pumping speed m3/hr ","Ult pressure(mTorr) ","Total Equivalent Energy","Inlet ","exhaust ","PCWmin lpm","Power at ultimate KW ","Heat Balance","N2 kWh/year","DE KWh/ year ","PCW KWh/year "]]
+            filtered_df = filtered_df[["Model Name ","Pumping speed m3/hr ","Ult pressure(mTorr) ","Total Equivalent Energy","Inlet ","exhaust ","PCWmin lpm","Power at ultimate KW ","Heat Balance","N2 kWh/year","DE KWh/ year ","PCW KWh/year "]]
             filtered_df.fillna(0)
             zero_rows = filtered_df[filtered_df["Total Equivalent Energy"]==0]
             filtered_df.drop(filtered_df[filtered_df["Total Equivalent Energy"]==0].index,axis=0,inplace=True)
@@ -946,7 +946,7 @@ def update_output(n_clicks, values):
             filtered_df = pd.concat([filtered_df,zero_rows],axis=0)
             filtered_df[filtered_df==0] = "N/A"
             filtered_df[list(filtered_df.columns[:])] = filtered_df[list(filtered_df.columns[:])].astype(str)
-            filtered_df = filtered_df[["Supplier ","Model Name ","Pumping speed m3/hr ","Ult pressure(mTorr) ","Total Equivalent Energy","Inlet ","exhaust ","PCWmin lpm","Power at ultimate KW ","Heat Balance","N2 kWh/year","DE KWh/ year ","PCW KWh/year "]]
+            filtered_df = filtered_df[["Model Name ","Pumping speed m3/hr ","Ult pressure(mTorr) ","Total Equivalent Energy","Inlet ","exhaust ","PCWmin lpm","Power at ultimate KW ","Heat Balance","N2 kWh/year","DE KWh/ year ","PCW KWh/year "]]
             # print(filtered_df[["Max power kVA"]])
             # Style Conditions to get the first row green
             styleConditions = {
@@ -984,7 +984,7 @@ def update_output(n_clicks, values):
                 default_graph_models.extend(list(filtered_df["Model Name "].iloc[:2].values))
             if not default_graph_models:
                 default_graph_models.append(filtered_df["Model Name "].iloc[:2].values[0])
-			filtered_df[['Total Equivalent Energy','Heat Balance','N2 kWh/year',"DE KWh/ year ",'PCW KWh/year ']] = filtered_df[['Total Equivalent Energy','Heat Balance','N2 kWh/year',"DE KWh/ year ",'PCW KWh/year ']].astype(int)
+            filtered_df[['Total Equivalent Energy','Heat Balance','N2 kWh/year',"DE KWh/ year ",'PCW KWh/year ']] = filtered_df[['Total Equivalent Energy','Heat Balance','N2 kWh/year',"DE KWh/ year ",'PCW KWh/year ']].astype(int)
             return [[
             # AgGrid for the table with styling for the first row as green.
                 dag.AgGrid(id='table-div',defaultColDef={ "filter": True},
