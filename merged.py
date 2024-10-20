@@ -467,7 +467,11 @@ def calculate_downtimes(n_clicks, input1, input2, input3, table_data,table_data_
         filtered_df = filtered_df[(filtered_df["Pumping speed m3/hr "] >= (1-slider)*target_S) & (filtered_df["Pumping speed m3/hr "] <= (1+slider)*target_S)]
         filtered_df[['Total Equivalent Energy','Heat Balance','N2 kWh/year',"DE KWh/ year ",'PCW KWh/year ']] = filtered_df[['Total Equivalent Energy','Heat Balance','N2 kWh/year',"DE KWh/ year ",'PCW KWh/year ']].astype(int)
         filtered_df["Pump_DownTimes"] = [calculate_downtimes_pipes(model,pressure,volume) for model in filtered_df["Model Name "]]
-        filtered_df = filtered_df.sort_values("Total Equivalent Energy")
+        zero_rows = filtered_df[(filtered_df["Total Equivalent Energy"]==0) | (filtered_df["Heat Balance"] == 0) | (filtered_df["N2 kWh/year"] == 0) | (filtered_df["PCW KWh/year "] == 0) | (filtered_df["DE KWh/ year "] == 0)]
+        filtered_df.drop(zero_rows.index,axis=0,inplace=True)
+        filtered_df = filtered_df.sort_values('Total Equivalent Energy') # Ordering based on the Total Equivalent Energyin the increasing order.
+        filtered_df = pd.concat([filtered_df,zero_rows],axis=0)
+        
         # cols = filtered_df.columns[0:2].to_list() + ["Pump_DownTimes"] + filtered_df.columns[2:-1].to_list()
         # print(target_S,pump_find_df['Pumping speed m3/hr '].values)
         cols = ["Supplier ","Model Name ","Pumping speed m3/hr ","Ult pressure(mTorr) ","Pump_DownTimes","Total Equivalent Energy","Inlet ","exhaust ","PCWmin lpm","Power at ultimate KW ","Heat Balance","N2 kWh/year","DE KWh/ year ","PCW KWh/year "]
@@ -650,7 +654,13 @@ def extract(filename,location,target_pressure):
 )
 def display_selected_row(selected_rows,target_pressure,volume):
     if selected_rows:
-        selected_row = pump_find_df[pump_find_df["Pumping speed m3/hr "] == selected_rows[0]["Pumping speed m3/hr "]].sort_values("Total Equivalent Energy")
+        selected_row = pump_find_df[pump_find_df["Pumping speed m3/hr "] == selected_rows[0]["Pumping speed m3/hr "]]
+        zero_rows = selected_row[(selected_row["Total Equivalent Energy"]==0) | (selected_row["Heat Balance"] == 0) | 
+        (selected_row["N2 kWh/year"] == 0) | (selected_row["PCW KWh/year "] == 0) | (selected_row["DE KWh/ year "] == 0)]
+        selected_row.drop(zero_rows.index,axis=0,inplace=True)
+        selected_row = selected_row.sort_values('Total Equivalent Energy') # Ordering based on the Total Equivalent Energyin the increasing order.
+        selected_row = pd.concat([selected_row,zero_rows],axis=0)
+        
         outputs = []
         model_name = selected_row["Model Name "].values[0]
         filename = f"{model_name}.csv"
@@ -777,8 +787,12 @@ def display_selected_row(selected_rows,target_pressure,volume):
 )
 def display_selected_row_2(selected_rows,pressure):
     if selected_rows:
-
-        selected_row = pump_find_df[pump_find_df["Pumping speed m3/hr "] == selected_rows[0]["Pumping speed m3/hr "]].sort_values("Total Equivalent Energy")
+        selected_row = pump_find_df[pump_find_df["Pumping speed m3/hr "] == selected_rows[0]["Pumping speed m3/hr "]]
+        zero_rows = selected_row[(selected_row["Total Equivalent Energy"]==0) | (selected_row["Heat Balance"] == 0) | (selected_row["N2 kWh/year"] == 0) | (selected_row["PCW KWh/year "] == 0) | (selected_row["DE KWh/ year "] == 0)]
+        selected_row.drop(zero_rows.index,axis=0,inplace=True)
+        selected_row = selected_row.sort_values('Total Equivalent Energy') # Ordering based on the Total Equivalent Energyin the increasing order.
+        selected_row = pd.concat([selected_row,zero_rows],axis=0)
+        
         selected_row = selected_row[selected_row["Ult pressure(mTorr) "] <= pressure]
         return html.Div([
                 dag.AgGrid(
@@ -940,8 +954,8 @@ def update_output(n_clicks, values):
             # print("COLUMNS AGAIN \n",filtered_df.columns)
             filtered_df = filtered_df[["Model Name ","Pumping speed m3/hr ","Ult pressure(mTorr) ","Total Equivalent Energy","Inlet ","exhaust ","PCWmin lpm","Power at ultimate KW ","Heat Balance","N2 kWh/year","DE KWh/ year ","PCW KWh/year "]]
             filtered_df.fillna(0)
-            zero_rows = filtered_df[filtered_df["Total Equivalent Energy"]==0]
-            filtered_df.drop(filtered_df[filtered_df["Total Equivalent Energy"]==0].index,axis=0,inplace=True)
+            zero_rows = filtered_df[(filtered_df["Total Equivalent Energy"]==0) | (filtered_df["Heat Balance"] == 0) | (filtered_df["N2 kWh/year"] == 0) | (filtered_df["PCW KWh/year "] == 0) | (filtered_df["DE KWh/ year "] == 0)]
+            filtered_df.drop(zero_rows.index,axis=0,inplace=True)
             filtered_df = filtered_df.sort_values('Total Equivalent Energy') # Ordering based on the Total Equivalent Energyin the increasing order.
             filtered_df = pd.concat([filtered_df,zero_rows],axis=0)
             filtered_df[['Total Equivalent Energy','Heat Balance','N2 kWh/year',"DE KWh/ year ",'PCW KWh/year ']] = filtered_df[['Total Equivalent Energy','Heat Balance','N2 kWh/year',"DE KWh/ year ",'PCW KWh/year ']].astype(int)
