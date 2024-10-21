@@ -523,7 +523,7 @@ def database_View(n_clicks,pressure,volume):
         lst = [(calculate_downtimes_pipes(model,pressure,volume)) for model in pump_find_df["Model Name "]]
         pump_find_df["Pump_DownTimes"] = [round(val,4) if val else 0 for val in lst]
         
-        cols = ["Model Name ","Pumping speed m3/hr ","Ult pressure(mTorr) ","Pump_DownTimes","Total Equivalent Energy","Inlet ","exhaust ","PCWmin lpm","Power at ultimate KW ","Heat Balance","N2 kWh/year","DE KWh/ year ","PCW KWh/year "]
+        cols = ["Supplier ","Model Name ","Pumping speed m3/hr ","Ult pressure(mTorr) ","Pump_DownTimes","Total Equivalent Energy","Inlet ","exhaust ","PCWmin lpm","Power at ultimate KW ","Heat Balance","N2 kWh/year","DE KWh/ year ","PCW KWh/year "]
         columns = [{"field":col} for col in cols]
         pump_find_df[["Total Equivalent Energy","PCWmin lpm","Power at ultimate KW ","Heat Balance","N2 kWh/year","DE KWh/ year ","PCW KWh/year "]]=pump_find_df[["Total Equivalent Energy","PCWmin lpm","Power at ultimate KW ","Heat Balance","N2 kWh/year","DE KWh/ year ","PCW KWh/year "]].astype(int)
         data = pump_find_df.to_dict('records')
@@ -951,7 +951,7 @@ def update_output(n_clicks, values):
 
             filtered_df["S.No"] = 1
             # print("COLUMNS AGAIN \n",filtered_df.columns)
-            filtered_df = filtered_df[["Model Name ","Pumping speed m3/hr ","Ult pressure(mTorr) ","Total Equivalent Energy","Inlet ","exhaust ","PCWmin lpm","Power at ultimate KW ","Heat Balance","N2 kWh/year","DE KWh/ year ","PCW KWh/year "]]
+            filtered_df = filtered_df[["Supplier ","Model Name ","Pumping speed m3/hr ","Ult pressure(mTorr) ","Total Equivalent Energy","Inlet ","exhaust ","PCWmin lpm","Power at ultimate KW ","Heat Balance","N2 kWh/year","DE KWh/ year ","PCW KWh/year "]]
             filtered_df.fillna(0)
             zero_rows = filtered_df[filtered_df["Total Equivalent Energy"]==0]
             filtered_df.drop(zero_rows.index,axis=0,inplace=True)
@@ -961,7 +961,7 @@ def update_output(n_clicks, values):
             
             filtered_df[filtered_df==0] = "N/A"
             filtered_df[list(filtered_df.columns[:])] = filtered_df[list(filtered_df.columns[:])].astype(str)
-            filtered_df = filtered_df[["Model Name ","Pumping speed m3/hr ","Ult pressure(mTorr) ","Total Equivalent Energy","Inlet ","exhaust ","PCWmin lpm","Power at ultimate KW ","Heat Balance","N2 kWh/year","DE KWh/ year ","PCW KWh/year "]]
+            filtered_df = filtered_df[["Supplier ","Model Name ","Pumping speed m3/hr ","Ult pressure(mTorr) ","Total Equivalent Energy","Inlet ","exhaust ","PCWmin lpm","Power at ultimate KW ","Heat Balance","N2 kWh/year","DE KWh/ year ","PCW KWh/year "]]
             # print(filtered_df[["Max power kVA"]])
             # Style Conditions to get the first row green
             styleConditions = {
